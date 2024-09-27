@@ -1,0 +1,6 @@
+**/.idea
+**/.vscode/
+Cargo.lock
+**/target
+db
+**/secret.*

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  {% include "partials/head.html" %}
+  <body>
+    <div class="page">
+      {% include "partials/sidebar.html" %}
+      {% include "partials/navbar.html" %}
+      <div class="page-wrapper">
+
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="page-pretitle">
+                  Application
+                </div>
+                <h2 class="page-title">
+                  {{ app.id }}
+                </h2>
+              </div>
+              <!-- Page title actions -->
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  <a href="" class="btn d-none d-sm-inline-block">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
+                    View on Github
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="row row-cards">
+              <div class="col-12">
+
+                <div class="card">
+                  <div class="card-body">
+                    <div class="datagrid">
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Account Name</div>
+                        <div class="datagrid-content"></div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Account Type</div>
+                        <div class="datagrid-content"></div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Installation ID</div>
+                        <div class="datagrid-content"></div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Expiration date</div>
+                        <div class="datagrid-content">–</div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Creator</div>
+                        <div class="datagrid-content">
+                          <div class="d-flex align-items-center">
+                            <span class="avatar avatar-xs me-2 rounded" style="background-image: url(./static/avatars/000m.jpg)"></span>
+                            Paweł Kuna
+                          </div>
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Age</div>
+                        <div class="datagrid-content">15 days</div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Edge network</div>
+                        <div class="datagrid-content">
+                          <span class="status status-green">
+                            Active
+                          </span>
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Avatars list</div>
+                        <div class="datagrid-content">
+                          <div class="avatar-list avatar-list-stacked">
+                            <span class="avatar avatar-xs rounded" style="background-image: url(./static/avatars/000m.jpg)"></span>
+                            <span class="avatar avatar-xs rounded">JL</span>
+                            <span class="avatar avatar-xs rounded" style="background-image: url(./static/avatars/002m.jpg)"></span>
+                            <span class="avatar avatar-xs rounded" style="background-image: url(./static/avatars/003m.jpg)"></span>
+                            <span class="avatar avatar-xs rounded" style="background-image: url(./static/avatars/000f.jpg)"></span>
+                            <span class="avatar avatar-xs rounded">+3</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Checkbox</div>
+                        <div class="datagrid-content">
+                          <label class="form-check">
+                            <input class="form-check-input" type="checkbox" checked="">
+                            <span class="form-check-label">Click me</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Icon</div>
+                        <div class="datagrid-content">
+                          <!-- Download SVG icon from http://tabler-icons.io/i/check -->
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon text-green"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></svg>
+                          Checked
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Form control</div>
+                        <div class="datagrid-content">
+                          <input type="text" class="form-control form-control-flush" placeholder="Input placeholder">
+                        </div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">Longer description</div>
+                        <div class="datagrid-content">
+                          Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- end page body -->
+        {% include "partials/footer.html" %}
+      </div>
+    </div>
+    {% include "partials/modals.html" %}
+    {% include "partials/scripts.html" %}
+  </body>
+</html>

@@ -1,0 +1,29 @@
+[package]
+name = "saasbase-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Adam Wierchoła <adam@wierchola.com>"]
+default-run = "saasbase"
+
+[[bin]]
+name = "saasbase"
+path = "src/main.rs"
+
+[dependencies]
+saasbase = { path = "../lib" }
+
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"]}
+tokio-util = "0.7.11"
+tokio-stream = "0.1"
+
+reqwest = { version = "0.12.4", features = ["json"] }
+
+clap = "4"
+directories = "4"
+rpassword = "7.3.1"
+
+anyhow = "1.0.86"
+
+uuid = "1.8.0"
+
+bincode = "1.3.3"
