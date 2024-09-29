@@ -2,7 +2,9 @@
 name = "saasbase"
 version = "0.1.0"
 edition = "2021"
+description = "Build saas fast. Repeat."
 license = "MIT"
+repository = "https://github.com/adamsky/saasbase"
 
 
 [features]
