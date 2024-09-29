@@ -6,6 +6,7 @@ pub use subscription::Plan;
 use std::fmt::{Display, Formatter};
 use std::io::{BufWriter, Cursor};
 use std::str::FromStr;
+use std::sync::Arc;
 
 use chrono::{DateTime, Duration, Utc};
 use rand::seq::SliceRandom;
@@ -127,14 +128,23 @@ impl Identifiable for User {
 
 impl User {
     pub fn new(db: &Database) -> Result<Self> {
-        let colors = [
-            (68u8, 153u8, 58u8),
-            (40u8, 118u8, 191u8),
-            (191u8, 58u8, 40u8),
-            (171u8, 169u8, 48u8),
-        ];
-        let identicon = identicon_rs::new(rand::random::<u16>().to_string())
-            .set_color(colors.choose(&mut rand::thread_rng()).unwrap().to_owned())
+        let identicon_theme = identicon_rs::theme::HSLRange::new(
+            0.0,
+            360.0,
+            50.0,
+            90.0,
+            40.0,
+            60.0,
+            vec![identicon_rs::color::RGB {
+                red: 240,
+                green: 240,
+                blue: 240,
+            }],
+        )
+        .unwrap();
+
+        let identicon = identicon_rs::new(rand::random::<u16>().to_string().as_str())
+            .set_theme(Arc::new(identicon_theme))
             .set_border(15)
             .generate_image()
             .unwrap();

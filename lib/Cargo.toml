@@ -67,8 +67,8 @@ chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = { version = "0.8", features = ["serde"] } 
 semver = "1.0.22"
 
-image = { version = "0.24", default-features = false, features = ["png"] }
-identicon-rs = { git = "https://github.com/adamsky/identicon-rs" }
+image = { version = "0.25", default-features = false, features = ["png"] }
+identicon-rs = "6.0.0"
 
 lettre = "0.11"
 
