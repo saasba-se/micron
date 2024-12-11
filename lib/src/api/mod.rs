@@ -4,21 +4,23 @@ use serde::{Deserialize, Serialize};
 
 // TODO make into set of enum variants for more granular control
 /// Defines the scope of access for resulting access token.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub enum AuthScope {
     /// Restricted to publicly visible information
     Public,
+    #[default]
     Complete,
 }
 
 /// Defines the length-of-life of resulting access token.
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, Serialize, Deserialize)]
 pub enum AuthDuration {
     /// 1 hour
     Short,
     /// 1 day
     Medium,
     /// 30 days
+    #[default]
     Long,
 }
 

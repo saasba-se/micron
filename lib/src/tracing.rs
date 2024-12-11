@@ -117,11 +117,12 @@ pub fn json_logging_layer<
         .with_test_writer()
 }
 
+/// Initializes
 pub fn init(config: &Config) -> Result<()> {
     use tracing_log::LogTracer;
     use tracing_subscriber::prelude::*;
 
-    LogTracer::init().expect("Unable to setup log tracer!");
+    LogTracer::init().map_err(|e| ErrorKind::Other(e.to_string()))?;
 
     match config.tracing.mode {
         Mode::Production => {

@@ -44,7 +44,7 @@ pub fn log_in_user_id<'c>(user_id: &UserId, db: &Database) -> Result<Cookie<'c>>
     }
 
     // no active token for user, generate token and create the cookie
-    let auth_token = TokenMeta::new(user_id.clone());
+    let auth_token = TokenMeta::new(*user_id);
 
     db.set(&auth_token)?;
 

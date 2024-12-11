@@ -5,6 +5,7 @@ use crate::db::Database;
 use crate::{order::Order, UserId};
 use crate::{Result, User};
 
+/// Credits are the chief abstraction for in-application currency.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Credits {

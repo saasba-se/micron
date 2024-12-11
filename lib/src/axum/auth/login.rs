@@ -8,57 +8,63 @@ use cookie::Cookie;
 
 use crate::auth::TokenMeta;
 use crate::error::{ErrorKind, Result};
-use crate::{util, Config};
+use crate::{util, Config, Error};
 
 use super::super::{ConfigExt, DbExt};
 
 /// Logout handler. Removes the token cookie and redirects to home page.
-pub async fn logout(cookies: PrivateCookieJar, request: Request) -> (PrivateCookieJar, Redirect) {
-    let updated_cookies = cookies.remove(Cookie::named("token"));
-    (updated_cookies, Redirect::to("/"))
+pub async fn logout(
+    mut cookies: PrivateCookieJar,
+    request: Request,
+) -> (PrivateCookieJar, Redirect) {
+    cookies = cookies.remove(Cookie::named("token"));
+    (cookies, Redirect::to("/"))
 }
 
 #[derive(Debug, Deserialize)]
-pub struct LoginUserData {
+pub struct LoginData {
     email: String,
     password: String,
 }
 
-pub async fn login_submit(
+/// Processes login form data and logs the user in.
+pub async fn login(
     Extension(db): DbExt,
     headers: HeaderMap,
-    cookies: PrivateCookieJar,
-    Form(user_data): Form<LoginUserData>,
+    mut cookies: PrivateCookieJar,
+    Form(user_data): Form<LoginData>,
 ) -> Result<(PrivateCookieJar, impl IntoResponse)> {
     let user = match util::find_user_by_email(&db, &user_data.email) {
         Ok(u) => u,
-        Err(e) => return Ok((cookies, Html("Invalid credentials").into_response())),
+        Err(e) => {
+            log::trace!("didn't find user by email: {e}, trying to find by handle...");
+            match util::find_user_by_handle(&db, &user_data.email) {
+                Ok(u) => u,
+                Err(e) => return Err(ErrorKind::InvalidCredentials.into()),
+            }
+        }
     };
-    // println!(
-    //     "validating {:?}\n{}\n{:?}",
-    //     user_id, user_data.password, user.password_hash
-    // );
     if user.password_hash == None {
-        // println!("passwd hash is none");
-        // return Err(Error::AuthFailed("".to_string()));
-        return Err(ErrorKind::AuthFailed("".to_string()).into());
+        return Err(Error::new_with(
+            ErrorKind::PasswordNotSet,
+            None,
+            Some(user.id),
+        ));
     }
     if let Err(e) = crate::auth::validate_password(
         user_data.password.as_bytes(),
         &user.password_hash.clone().unwrap(),
     ) {
-        // password invalid
-        // println!("password didn't match: {:?}", e);
-        Ok((cookies, Html("Invalid credentials").into_response()))
+        Err(ErrorKind::InvalidCredentials.into())
     } else {
         // don't let disabled users log in
         if user.is_disabled {
-            // println!("user is disabled!");
-            return Ok((cookies, Html("Account disabled").into_response()));
+            return Err(Error::new_with(
+                ErrorKind::AccountDisabled,
+                None,
+                Some(user.id),
+            ));
         }
-
-        let token_meta = TokenMeta::new(user.id);
-        db.set(&token_meta);
 
         let redir = if let Some(redir) = cookies.get("redir") {
             redir.value().to_string()
@@ -66,11 +72,11 @@ pub async fn login_submit(
             "/".to_string()
         };
 
-        let new_cookies = cookies.add(Cookie::new("token", token_meta.id.to_string()));
-        let new_cookies = new_cookies.remove(Cookie::named("redir"));
+        cookies = cookies.add(crate::auth::login::log_in_user_id(&user.id, &db)?);
+        cookies = cookies.remove(Cookie::named("redir"));
 
         Ok((
-            new_cookies,
+            cookies,
             AppendHeaders([("HX-Redirect", &redir)]).into_response(),
         ))
     }

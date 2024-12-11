@@ -33,8 +33,8 @@ pub fn user(config: &Config, db: &Database) -> Result<User> {
     user.email = email;
     user.email_confirmed = true;
     user.password_hash = Some(auth::hash_password("test")?);
-    user.full_name = "Test User".to_string();
-    user.display_name = "testuser12".to_string();
+    user.name = "Test User".to_string();
+    user.handle = "testuser12".to_string();
     user.plan = user::Plan {
         name: "Enterprise".to_string(),
         ..Default::default()

@@ -68,7 +68,7 @@ pub async fn get_user_info<'c>(
 
     // Q: do we need to set MIME?
 
-    // Fetch user data from Google
+    // Fetch user data
     let client = reqwest::Client::new();
     let user_info: FacebookUserInfo = client
         .get("https://graph.facebook.com/me?fields=id,name,email,picture")

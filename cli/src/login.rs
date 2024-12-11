@@ -1,13 +1,12 @@
 use anyhow::{Error, Result};
-use clap::ArgMatches;
+use clap::{Arg, ArgMatches, Command};
 use tokio_util::sync::CancellationToken;
 
 use saasbase::api::{self, AuthDuration, AuthResponse, AuthScope};
 
 use crate::util::store_token;
 
-pub fn cmd() -> clap::Command {
-    use clap::{Arg, Command};
+pub fn cmd() -> Command {
     Command::new("login")
         .about("Log in to the saasbase platform")
         .long_about(
@@ -15,7 +14,7 @@ pub fn cmd() -> clap::Command {
             Provide email and password in the interactive prompt. Alternatively,\n\
             manually provide user credentials or an application token.",
         )
-        .display_order(30)
+        .display_order(100)
         .arg(
             Arg::new("email")
                 .display_order(11)
@@ -44,7 +43,7 @@ pub fn cmd() -> clap::Command {
 
 /// Authenticates user with saasbase platform credentials and stores the
 /// resulting application token on the filesystem.
-pub async fn login(matches: &ArgMatches, cancellation: CancellationToken) -> Result<()> {
+pub async fn run(matches: &ArgMatches, cancellation: CancellationToken) -> Result<()> {
     let mut creds = None;
     let mut token = None;
     if matches.get_one::<String>("email").is_some()

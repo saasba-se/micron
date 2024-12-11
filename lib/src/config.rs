@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{collections::HashSet, net::SocketAddr};
 
 use serde::de::DeserializeOwned;
 
@@ -47,7 +47,9 @@ pub struct Config {
     pub oauth: Oauth,
 
     pub registration: Registration,
+
     pub email: Email,
+    pub mailing: Mailing,
 
     pub payments: Payments,
 
@@ -87,6 +89,7 @@ impl Default for Config {
             payments: Default::default(),
             company: Default::default(),
             email: Default::default(),
+            mailing: Default::default(),
         }
     }
 }
@@ -207,7 +210,19 @@ pub struct Stripe {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
-pub struct Auth {}
+pub struct Auth {
+    /// Switch defining whether user must have confirmed email to be able
+    /// to successfully pass auth.
+    ///
+    /// If true, users without confirmed email will be presented with ability
+    /// to confirm their email. Otherwise the auth will be succesfull, and
+    /// any functionality restrictions are up to the application.
+    ///
+    /// This requirement doesn't have any effect on the oauth process, as
+    /// successful oauth requires verified email information from the
+    /// third-party provider.
+    pub require_confirmed_email: bool,
+}
 
 /// OAuth2 authentication configuration, including ability to enable support
 /// for different providers.
@@ -218,7 +233,7 @@ pub struct Oauth {
     pub discord: bool,
     pub facebook: OauthEntry,
     pub github: OauthEntry,
-    pub google: bool,
+    pub google: OauthEntry,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -231,19 +246,66 @@ pub struct OauthEntry {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Registration {
+    /// Top level switch, toggling all registration.
     pub enabled: bool,
+
+    /// Email registration switch.
     pub email: bool,
+    pub email_verification: bool,
+
+    /// Oauth2 registration switch, further configured through `config::oauth`.
     pub oauth: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Email {
+    /// Address that the application will use to send emails to users and
+    /// non-registered subscribers.
     pub address: String,
-    pub smtp_user: String,
-    pub smtp_password: String,
+
+    // Smtp server and credentials.
     pub smtp_server: String,
     pub smtp_port: u16,
+    pub smtp_user: String,
+    pub smtp_password: String,
+
+    // Standard message overrides. The tuples are made out of subject,
+    // plain body and html body, in that order.
+    pub confirmation: Option<(String, String, String)>,
+    pub mailing_confirmation: Option<(String, String, String)>,
+    pub password_reset: Option<(String, String, String)>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Mailing {
+    /// All maintained mailing lists that can be subscribed by users and
+    /// non-users alike.
+    pub lists: HashSet<String>,
+
+    /// Require email confirmation upon subscribing as non-registered user.
+    /// For unconfirmed subscriptions the email information will be removed
+    /// from the database after a standard period.
+    pub confirmation: bool,
+}
+
+impl Default for Mailing {
+    fn default() -> Self {
+        let mut lists = HashSet::new();
+        lists.insert("main".to_string());
+        Self {
+            lists,
+            confirmation: true,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct MailingList {
+    pub name: String,
+    pub description: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

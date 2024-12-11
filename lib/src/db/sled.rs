@@ -1,6 +1,6 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use sled::Tree;
+use sled::{IVec, Tree};
 use uuid::Uuid;
 
 use crate::{error::ErrorKind, Result};
@@ -10,10 +10,6 @@ use super::{decode, encode, Collectable, Identifiable};
 #[derive(Clone, Debug)]
 pub struct SledDb {
     inner: sled::Db,
-    // trees: FnvHashMap<String, Tree>,
-    users: Tree,
-    access_tokens: Tree,
-    images: Tree,
 }
 
 impl SledDb {
@@ -24,13 +20,7 @@ impl SledDb {
             .path("./db")
             .open()
             .expect("failed to open db");
-        Ok(Self {
-            inner: inner.clone(),
-            // trees: Default::default(),
-            users: inner.open_tree("users").unwrap(),
-            access_tokens: inner.open_tree("access_tokens").unwrap(),
-            images: inner.open_tree("images").unwrap(),
-        })
+        Ok(Self { inner })
     }
 
     pub fn get_collection<T: DeserializeOwned + Collectable>(&self) -> Result<Vec<T>> {
@@ -40,6 +30,20 @@ impl SledDb {
             let (_, value_bytes) = entry?;
             let value: T = decode(&value_bytes)?;
             out.push(value);
+        }
+        Ok(out)
+    }
+
+    pub fn len<T: Collectable>(&self) -> Result<usize> {
+        Ok(self.inner.open_tree(T::get_collection_name())?.len())
+    }
+
+    pub fn get_collection_raw<T: Collectable>(&self) -> Result<Vec<(Vec<u8>, Vec<u8>)>> {
+        let tree = self.inner.open_tree(T::get_collection_name())?;
+        let mut out = Vec::new();
+        for entry in tree.iter() {
+            let (id, value) = entry?;
+            out.push((id.to_vec(), value.to_vec()));
         }
         Ok(out)
     }
@@ -68,8 +72,14 @@ impl SledDb {
 
     /// Convenience function providing initializing a default if the target
     /// collection element is not found in the db.
-    pub fn get_or_create<T: DeserializeOwned + Collectable + Default>(&self, id: Uuid) -> T {
-        self.get(id).unwrap_or(T::default())
+    pub fn get_or_create<T: Serialize + DeserializeOwned + Identifiable + Collectable + Default>(
+        &self,
+        id: Uuid,
+    ) -> Result<T> {
+        self.get::<T>(id).or_else(|_| {
+            let default = T::default();
+            self.set(&default).map(|_| default)
+        })
     }
 
     pub fn set<T: Serialize + Identifiable + Collectable>(&self, value: &T) -> Result<()> {

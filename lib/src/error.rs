@@ -5,11 +5,12 @@ use std::net::SocketAddr;
 
 use axum::body::HttpBody;
 use axum::http::Uri;
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::Json;
 use http::status::StatusCode;
 use serde_json::json;
 use url::Url;
+use uuid::Uuid;
 
 use crate::auth::hash_password;
 use crate::routes;
@@ -22,6 +23,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct Error {
     pub kind: ErrorKind,
     pub backtrace: Backtrace,
+    pub request: Option<Uuid>,
+    pub user: Option<Uuid>,
 }
 
 impl std::error::Error for Error {}
@@ -31,13 +34,33 @@ impl Error {
         Self {
             kind,
             backtrace: Backtrace::capture(),
+            request: None,
+            user: None,
+        }
+    }
+
+    pub fn new_with(kind: ErrorKind, request: Option<Uuid>, user: Option<Uuid>) -> Self {
+        Self {
+            kind,
+            backtrace: Backtrace::capture(),
+            request,
+            user,
         }
     }
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, {}", self.kind.to_string(), self.backtrace);
+        write!(f, "{}", self.kind.to_string());
+        if let Some(user) = self.user {
+            write!(f, ", user: {}", user);
+        }
+        if let Some(request) = self.request {
+            write!(f, ", request: {}", request);
+        }
+        if self.backtrace.status() == std::backtrace::BacktraceStatus::Captured {
+            write!(f, ", {}", self.backtrace);
+        }
         Ok(())
     }
 }
@@ -76,11 +99,20 @@ pub enum ErrorKind {
     #[error("msg: {0}")]
     Message(String),
 
+    #[error("bad input: {0}")]
+    BadInput(String),
+
     #[error("forbidden")]
     Forbidden,
 
     #[error("authentication failed: {0}")]
     AuthFailed(String),
+    #[error("invalid credentials")]
+    InvalidCredentials,
+    #[error("password not set")]
+    PasswordNotSet,
+    #[error("account disabled")]
+    AccountDisabled,
     /// Happens on unauthenticated user trying to access dash routes.
     /// Gets turned into a response redirecting to home page.
     #[error("failed getting token cookie")]
@@ -251,15 +283,51 @@ impl From<ErrorKind> for Error {
     }
 }
 
+/// Implements conversion into html response for all possible error variants.
+///
+/// # Error message stripping in production
+///
+/// When compiled with optimizations ("release mode"), responses are stripped
+/// or even modified to enhance security.
+///
+/// Backtrace and additional context information (e.g. user information) are
+/// never part of the response and always only available through the
+/// application logs.
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        // TODO: when running in development mode always return full error
-        // context to the caller
-
         match &self.kind {
-            ErrorKind::AuthFailed { .. } | ErrorKind::Forbidden => {
-                tracing::error!("{}", self.to_string());
-                StatusCode::FORBIDDEN.into_response()
+            ErrorKind::Forbidden => StatusCode::FORBIDDEN.into_response(),
+            ErrorKind::AuthFailed { .. } => {
+                tracing::debug!("{}", self.to_string());
+                let msg = if cfg!(debug_assertions) {
+                    self.kind.to_string()
+                } else {
+                    "Auth failed".to_string()
+                };
+                (StatusCode::FORBIDDEN, Html(msg)).into_response()
+            }
+            ErrorKind::InvalidCredentials => {
+                tracing::debug!("{}", self.to_string());
+                (StatusCode::FORBIDDEN, Html(self.to_string())).into_response()
+            }
+            ErrorKind::PasswordNotSet { .. } => {
+                tracing::debug!("{}", self.to_string());
+                let msg = if cfg!(debug_assertions) {
+                    self.kind.to_string()
+                } else {
+                    // Don't make it possible for anyone to check if user has
+                    // their password set. Return a standard error response
+                    // instead.
+                    "Invalid credentials".to_string()
+                };
+                // TODO: immediately send email to the user with a link to set
+                // a new password
+                (StatusCode::FORBIDDEN, Html(msg)).into_response()
+            }
+            ErrorKind::AccountDisabled => {
+                tracing::debug!("{}", self.to_string());
+                // TODO: send email to the user with a link to set password
+                (StatusCode::FORBIDDEN, Html(self.to_string())).into_response()
             }
 
             ErrorKind::FailedGettingTokenCookie(target_url) => {
@@ -271,6 +339,10 @@ impl IntoResponse for Error {
             ErrorKind::RegistrationClosed(e) => {
                 tracing::trace!("{}", self.to_string());
                 Redirect::to(&format!("{}?msg=Registration closed", routes::LOGIN)).into_response()
+            }
+            ErrorKind::BadInput(e) => {
+                tracing::trace!("{}", self.to_string());
+                (StatusCode::BAD_REQUEST, Html(self.to_string())).into_response()
             }
             _ => {
                 tracing::error!("{}", self.to_string());

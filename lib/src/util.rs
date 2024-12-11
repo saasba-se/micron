@@ -67,6 +67,15 @@ pub fn find_user_by_email(db: &Database, email: &String) -> Result<User> {
     Err(ErrorKind::UserNotFound(format!("{}", email)).into())
 }
 
+pub fn find_user_by_handle(db: &Database, handle: &String) -> Result<User> {
+    for user in db.get_collection::<User>()? {
+        if &user.handle == handle {
+            return Ok(user);
+        }
+    }
+    Err(ErrorKind::UserNotFound(format!("{}", handle)).into())
+}
+
 pub fn create_test_user(db: &Database) -> Result<Uuid> {
     let email = "test@mail.com".to_string();
 
@@ -86,8 +95,8 @@ pub fn create_test_user(db: &Database) -> Result<Uuid> {
     user.email = email;
     user.email_confirmed = true;
     user.password_hash = Some(auth::hash_password("test")?);
-    user.full_name = "Test User".to_string();
-    user.display_name = "testuser12".to_string();
+    user.name = "Test User".to_string();
+    user.handle = "testuser12".to_string();
     user.plan = user::Plan {
         name: "Enterprise".to_string(),
         ..Default::default()
@@ -171,7 +180,8 @@ pub fn get_available_address() -> Result<SocketAddr> {
 /// Re-generates cookie key and stores it in place of the old one.
 pub fn regen_cookie_key(db: &Database) -> Result<()> {
     let key = cookie::Key::generate();
-    db.set_raw_at("keys", &key.master(), Uuid::nil()).unwrap();
+    db.set_raw_at("cookie_keys", &key.master(), Uuid::nil())
+        .unwrap();
 
     Ok(())
 }

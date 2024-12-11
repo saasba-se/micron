@@ -4,6 +4,7 @@ use super::Router;
 
 mod facebook;
 mod github;
+mod google;
 
 pub fn router() -> Router {
     Router::new()
@@ -11,8 +12,8 @@ pub fn router() -> Router {
         .route("/auth/facebook", get(facebook::callback))
         .route("/login/github", get(github::initiate))
         .route("/auth/github", get(github::callback))
-    // .route("/login/discord", get(discord::login))
-    // .route("/auth/discord", get(discord::login_authorized))
-    // .route("/login/google", get(google::login))
-    // .route("/auth/google", get(google::login_authorized))
+        // .route("/login/discord", get(discord::login))
+        // .route("/auth/discord", get(discord::login_authorized))
+        .route("/login/google", get(google::initiate))
+        .route("/auth/google", get(google::callback))
 }

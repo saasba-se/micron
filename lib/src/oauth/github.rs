@@ -33,6 +33,7 @@ pub const TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct GitHubUserInfo {
+    login: String,
     email: String,
     name: Option<String>,
     location: Option<String>,
@@ -43,6 +44,7 @@ impl Into<UserInfo> for GitHubUserInfo {
     fn into(self) -> UserInfo {
         UserInfo {
             email: self.email,
+            handle: Some(self.login),
             full_name: self.name,
             location: self.location,
             avatar_url: self.avatar_url,

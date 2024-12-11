@@ -1,7 +1,7 @@
 // pub mod discord;
 pub mod facebook;
 pub mod github;
-// pub mod google;
+pub mod google;
 
 use std::env;
 use std::sync::Arc;
@@ -44,7 +44,7 @@ pub fn client(
 pub struct UserInfo {
     email: String,
     full_name: Option<String>,
-    display_name: Option<String>,
+    handle: Option<String>,
     location: Option<String>,
     avatar_url: Option<String>,
 }
@@ -106,17 +106,12 @@ pub async fn login_or_register<'c>(
 
 /// Attempts to fit information from oauth provider into a new user structure.
 pub async fn new_user_from_oauth(db: &Database, user_info: UserInfo) -> Result<User> {
-    // let name_split = user_info
-    //     .full_name
-    //     .rsplitn(1, " ")
-    //     .map(|s| s.to_string())
-    //     .collect::<Vec<String>>();
     let mut user = User::new(db)?;
     user.email = user_info.email.clone();
     user.email_confirmed = true;
     user.is_disabled = false;
-    user.full_name = user_info.full_name.unwrap_or("".to_string());
-    user.display_name = user_info.display_name.unwrap_or(user_info.email);
+    user.name = user_info.full_name.unwrap_or("".to_string());
+    user.handle = user_info.handle.unwrap_or(user_info.email);
     if let Some(avatar_url) = user_info.avatar_url {
         user.set_avatar_from_url(db, &avatar_url).await?;
     }

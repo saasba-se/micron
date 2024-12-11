@@ -25,7 +25,6 @@ async fn main() {
             oauth: true,
             ..Default::default()
         },
-        auth: config::Auth {},
         oauth: config::Oauth {
             enabled: true,
             github: config::OauthEntry {

@@ -1,4 +1,3 @@
-// pub mod avatar;
 pub mod subscription;
 
 pub use subscription::Plan;
@@ -34,9 +33,16 @@ pub struct User {
     pub id: UserId,
 
     /// Full name used for things like invoices
-    pub full_name: String,
-    /// User-chosen name displayed on the platform
-    pub display_name: String,
+    pub name: String,
+
+    /// User-chosen name to be used throughout an application.
+    ///
+    /// # Unique string handles
+    ///
+    /// Applications may choose to use handles, instead of plain uuids, as
+    /// unique identifiers for users. See `Config::unique_handles` for
+    /// additional information.
+    pub handle: String,
 
     pub company: String,
     pub website: String,
@@ -44,7 +50,6 @@ pub struct User {
 
     pub country: String,
     pub timezone: chrono_tz::Tz,
-    // pub timezone: chrono::TimeZone,
     pub currency: Currency,
 
     pub avatar: ImageId,
@@ -90,8 +95,8 @@ impl Default for User {
 
             password_hash: None,
 
-            full_name: "Test User".to_string(),
-            display_name: "test_user".to_string(),
+            name: "Test User".to_string(),
+            handle: "test_user".to_string(),
 
             company: "".to_string(),
             website: "".to_string(),
@@ -126,39 +131,43 @@ impl Identifiable for User {
     }
 }
 
+pub fn new_avatar_image(db: &Database) -> Result<ImageId> {
+    let identicon_theme = identicon_rs::theme::HSLRange::new(
+        0.0,
+        360.0,
+        50.0,
+        90.0,
+        40.0,
+        60.0,
+        vec![identicon_rs::color::RGB {
+            red: 240,
+            green: 240,
+            blue: 240,
+        }],
+    )
+    .unwrap();
+
+    let identicon = identicon_rs::new(rand::random::<u16>().to_string().as_str())
+        .set_theme(Arc::new(identicon_theme))
+        .set_border(15)
+        .generate_image()
+        .unwrap();
+    let mut buffer = BufWriter::new(Cursor::new(Vec::new()));
+    identicon
+        .write_to(&mut buffer, image::ImageFormat::Png)
+        .unwrap();
+    let mut bytes = buffer.into_inner().unwrap().get_ref().to_vec();
+    let image = Image::new(bytes);
+    db.set(&image)?;
+
+    Ok(image.id)
+}
+
 impl User {
     pub fn new(db: &Database) -> Result<Self> {
-        let identicon_theme = identicon_rs::theme::HSLRange::new(
-            0.0,
-            360.0,
-            50.0,
-            90.0,
-            40.0,
-            60.0,
-            vec![identicon_rs::color::RGB {
-                red: 240,
-                green: 240,
-                blue: 240,
-            }],
-        )
-        .unwrap();
-
-        let identicon = identicon_rs::new(rand::random::<u16>().to_string().as_str())
-            .set_theme(Arc::new(identicon_theme))
-            .set_border(15)
-            .generate_image()
-            .unwrap();
-        let mut buffer = BufWriter::new(Cursor::new(Vec::new()));
-        identicon
-            .write_to(&mut buffer, image::ImageFormat::Png)
-            .unwrap();
-        let mut bytes = buffer.into_inner().unwrap().get_ref().to_vec();
-        let image = Image::new(bytes);
-        db.set(&image)?;
-
+        let image_id = new_avatar_image(db)?;
         let mut user = User::default();
-        user.avatar = image.id;
-
+        user.avatar = image_id;
         Ok(user)
     }
 
@@ -192,10 +201,10 @@ impl User {
         if self.email_confirmed {
             pc += 20;
         }
-        if !self.display_name.is_empty() {
+        if !self.handle.is_empty() {
             pc += 10;
         }
-        if !self.full_name.is_empty() {
+        if !self.name.is_empty() {
             pc += 10;
         }
         if !self.password_hash.is_none() {
@@ -259,7 +268,6 @@ pub struct UserSettings {
     /// Preferred language
     pub language: Language,
 
-    // API related
     /// Enable or disable ability to inspect and manage credits from the level
     /// of the API.
     ///
@@ -277,34 +285,10 @@ impl Default for UserSettings {
             dash_notifications: false,
             email_notifications: false,
             language: Language::English,
-            api_credits: true,
+            api_credits: false,
         }
     }
 }
-
-// impl Database {
-// /// Adds a new user to the database.
-// ///
-// /// # Unique email requirement
-// ///
-// /// Two users sharing the same email address is not allowed.
-// ///
-// /// # Replace existing user
-// ///
-// /// This function will replace existing user if the id key already exists
-// /// in the database.
-// pub fn add_user(&self, id: Uuid, user: &User) -> Result<()> {
-//     for _user in self.users.iter() {
-//         let (_, user_bytes) = _user?;
-//         let _user: User = decode(&user_bytes)?;
-//         if _user.email == user.email {
-//             return Err(Error::UserWithEmailAlreadyExists(user.email.clone()));
-//         }
-//     }
-//     self.users.insert(id, encode(&user)?);
-//     Ok(())
-// }
-// }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct UserActivities {

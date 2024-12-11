@@ -1,3 +1,4 @@
+#[cfg(feature = "stripe")]
 pub mod stripe;
 
 use chrono::{DateTime, Utc};

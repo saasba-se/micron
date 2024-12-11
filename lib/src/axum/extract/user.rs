@@ -47,6 +47,12 @@ impl From<RawUser> for User {
     }
 }
 
+impl Into<RawUser> for User {
+    fn into(self) -> RawUser {
+        self.0
+    }
+}
+
 #[async_trait]
 impl<S: Send + Sync> FromRequestParts<S> for User
 where

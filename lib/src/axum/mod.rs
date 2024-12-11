@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod extract;
 pub mod image;
+pub mod mailing;
 pub mod user;
 
 #[cfg(feature = "askama")]
@@ -17,7 +18,7 @@ use crate::{Config, Database};
 
 pub type Router = axum::Router<cookie::Key>;
 
-pub type ConfigExt = Extension<Arc<Config>>;
+pub type ConfigExt<C = Config> = Extension<Arc<C>>;
 pub type DbExt = Extension<Arc<Database>>;
 
 /// Registers saasbase routes on the provided router.
@@ -39,7 +40,9 @@ pub async fn start(mut router: Router, config: Config) -> Result<()> {
 }
 
 pub async fn start_with(db: Database, mut router: Router, config: Config) -> Result<()> {
-    crate::tracing::init(&config);
+    crate::tracing::init(&config).unwrap_or_else(|e| {
+        log::warn!("failed to initialize tracing (perhaps it was already initialized?): {e}")
+    });
 
     // Provide initial state as defined in config
     crate::init::initialize(&config, &db);
@@ -61,11 +64,11 @@ pub async fn start_with(db: Database, mut router: Router, config: Config) -> Res
         // Otherwise the cookie key is stored in the db and persisted
         // between application restarts. The key can be refreshed manually
         // using the cli tool.
-        match db.get_at::<Vec<u8>>("keys", uuid::Uuid::nil()) {
+        match db.get_at::<Vec<u8>>("cookie_keys", uuid::Uuid::nil()) {
             Ok(k) => cookie::Key::from(&k),
             Err(_) => {
                 let k = cookie::Key::generate();
-                db.set_raw_at("keys", &k.master(), uuid::Uuid::nil())?;
+                db.set_raw_at("cookie_keys", &k.master(), uuid::Uuid::nil())?;
                 k
             }
         }
