@@ -1,5 +1,7 @@
 ## <img src="assets/saasbase-logo.png" width="300">
 
+[![Static Badge](https://img.shields.io/badge/discord-server-blue)](https://discord.gg/Q3CzGTEHaC)
+
 <!-- cargo-rdme start -->
 
 *Build saas fast. Repeat.*
