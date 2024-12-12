@@ -10,10 +10,3 @@ impl Default for Head {
         }
     }
 }
-
-pub mod footer {
-    pub fn year() -> String {
-        use chrono::Datelike;
-        chrono::Utc::now().year().to_string()
-    }
-}
