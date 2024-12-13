@@ -4,7 +4,7 @@ address = "127.0.0.1:8000"
 enabled = true
 mock = true
 mock_regen = true
-autologin = "test@mail.com"
+# autologin = "test@mail.com"
 
 [oauth.github]
 enabled = true

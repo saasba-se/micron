@@ -25,21 +25,23 @@ use saasbase::{
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // main application router
-    let mut router = Router::new().route("/", get(home));
+    let config = config::load()?;
 
-    saasbase::axum::start(router, config::load()?).await?;
+    let router = Router::new().route("/", get(home));
+    let router = saasbase::router(router, &config);
+
+    saasbase::axum::start(router, config).await?;
 
     Ok(())
 }
 
 #[derive(Template)]
-#[template(path = "pages/summary.html")]
-pub struct Summary {
+#[template(path = "pages/home.html")]
+pub struct Home {
     head: partial::Head,
     config: saasbase::Config,
 
-    pub user: saasbase::User,
+    pub user: Option<saasbase::User>,
 }
 
 #[derive(Template)]
@@ -53,22 +55,15 @@ async fn home(
     user: Option<saasbase::axum::extract::User>,
     Extension(config): ConfigExt,
 ) -> Response {
-    if let Some(user) = user {
-        HtmlTemplate(Summary {
-            head: Head {
-                title: "Summary".to_string(),
+    HtmlTemplate(Home {
+        head: Head {
+            title: match &user {
+                Some(user) => "Summary".to_string(),
+                None => "Welcome to the demo".to_string(),
             },
-            config: config.as_ref().to_owned(),
-            user: user.0,
-        })
-        .into_response()
-    } else {
-        HtmlTemplate(Login {
-            head: Head {
-                title: "Login".to_string(),
-            },
-            config: config.as_ref().to_owned(),
-        })
-        .into_response()
-    }
+        },
+        config: config.as_ref().to_owned(),
+        user: user.map(|u| u.0),
+    })
+    .into_response()
 }
