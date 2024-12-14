@@ -44,13 +44,6 @@ pub struct Home {
     pub user: Option<saasbase::User>,
 }
 
-#[derive(Template)]
-#[template(path = "pages/login.html")]
-pub struct Login {
-    head: Head,
-    config: saasbase::Config,
-}
-
 async fn home(
     user: Option<saasbase::axum::extract::User>,
     Extension(config): ConfigExt,
