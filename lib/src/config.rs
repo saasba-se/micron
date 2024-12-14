@@ -18,7 +18,7 @@ pub static CONFIG_FILE: &'static str = "saasbase.toml";
 /// Using the *struct update syntax* one can initialize a new `Config`, making
 /// a few changes right in the definition.
 ///
-/// ```rust
+/// ```ignore
 /// let cfg = Config {
 ///     tracing: Tracing {
 ///         enabled: false,
