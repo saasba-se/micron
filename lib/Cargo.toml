@@ -87,7 +87,7 @@ lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
 
 [dev-dependencies]
 anyhow = "1.0.82"
-askama = "0.11.1"
+askama = "0.12.1"
 
 tower-serve-static = { git = "https://github.com/jannik4/tower-serve-static", version = "0.1.1" }
 include_dir = "0.7.0"
