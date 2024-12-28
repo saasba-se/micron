@@ -14,7 +14,11 @@ where
             Ok(html) => Html(html).into_response(),
             Err(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to render template. Error: {}", err),
+                if cfg!(debug_assertions) {
+                    format!("Failed to render template. Error: {}", err)
+                } else {
+                    format!("Failed to render template.")
+                },
             )
                 .into_response(),
         }
