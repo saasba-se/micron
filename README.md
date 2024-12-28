@@ -71,8 +71,8 @@ Examples showing off particular aspects of the library are also provided.
 
 While you already have the repository cloned you can try running the
 `saasbase-cli` tool. Navigate to `./cli` and do `cargo run`. With
-`saasbase-cli` you'll be able to inspect and mutate application state, either
-on-line or off-line.
+`saasbase-cli` you'll be able to inspect and mutate application state,
+either on-line or off-line.
 
 
 #### Pulling the library

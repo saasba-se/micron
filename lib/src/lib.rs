@@ -51,10 +51,22 @@
 //!
 //! # Geting started
 //!
-//! The fastest way to get started is to follow the provided examples. They
-//! will set you up on the way to quickly create a fully-featured application.
+//! The fastest way to get started is to build and run the provided demo. Clone
+//! the repo, navigate to `./demo` and simply run `cargo run`.
 //!
-//! Otherwise, here are some of the basics if you want to start from scratch.
+//! The demo should now be accessible at `localhost:8000`. If that port is
+//! unavailable on your machine simply modify the `address` field of the
+//! `./demo/saasbase.toml` file.
+//!
+//! For a more involved example application using `saasbase` see the
+//! [`ruda` project](https://github.com/adamsky/ruda).
+//!
+//! Examples showing off particular aspects of the library are also provided.
+//!
+//! While you already have the repository cloned you can try running the
+//! `saasbase-cli` tool. Navigate to `./cli` and do `cargo run`. With
+//! `saasbase-cli` you'll be able to inspect and mutate application state,
+//! either on-line or off-line.
 //!
 //!
 //! ## Pulling the library
