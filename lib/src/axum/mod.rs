@@ -21,19 +21,20 @@ pub type Router = axum::Router<cookie::Key>;
 pub type ConfigExt<C = Config> = Extension<Arc<C>>;
 pub type DbExt = Extension<Arc<Database>>;
 
-/// Registers saasbase routes on the provided router.
+/// Registers micron routes on the provided router.
 ///
 /// Meant to be used if there is a need to register custom middleware that will
-/// run on saasbase routes.
+/// run on micron routes.
 pub fn router(router: Router, config: &Config) -> Router {
     // TODO: merge routers based on whether they are enabled in config
     router
         .merge(user::router())
+        .merge(mailing::router())
         .merge(auth::router(&config))
         .merge(image::router())
 }
 
-/// Registers saasbase routes on the provided router, initializes application
+/// Registers micron routes on the provided router, initializes application
 /// state and starts the web server.
 pub async fn start(mut router: Router, config: Config) -> Result<()> {
     start_with(Database::new()?, router, config).await

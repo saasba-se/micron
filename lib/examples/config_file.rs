@@ -1,6 +1,6 @@
 //! Shows how to load configuration from file.
 
-use saasbase::{axum::Router, config, Config};
+use micron::{axum::Router, config, Config};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     // Start the application
-    saasbase::axum::start(Router::new(), config).await?;
+    micron::axum::start(Router::new(), config).await?;
 
     Ok(())
 }

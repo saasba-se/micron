@@ -105,18 +105,15 @@ where
             cookie.value().to_string()
         };
 
-        let token = db
-            .get::<TokenMeta>(Uuid::from_str(&token)?)
-            .map_err(|_| Error::new(ErrorKind::AuthFailed("".to_string())))?;
-
-        // println!("got the token: {:?}", token);
+        let token = db.get::<TokenMeta>(Uuid::from_str(&token)?).map_err(|_| {
+            Error::new(ErrorKind::AuthFailed(
+                "failed getting token meta from db".to_string(),
+            ))
+        })?;
 
         // check if token hasn't expired
-        let delta_time = Utc::now() - token.issued_at;
-        if delta_time.num_hours() > 48 {
-            db.remove(&token);
-            // return Err(Error::AuthFailed("".to_string()));
-            return Err(ErrorKind::AuthFailed("".to_string()).into());
+        if token_expired(&db, &token) {
+            return Err(ErrorKind::AuthFailed("token expired".to_string()).into());
         }
 
         db.get::<RawUser>(token.user_id).map(|u| User(u))
@@ -146,8 +143,7 @@ where
 
             // Uuid::from_str(&header_str)?
         } else {
-            // return Err(Error::AuthFailed("".to_string()));
-            return Err(ErrorKind::AuthFailed("".to_string()).into());
+            return Err(ErrorKind::AuthFailed("auth header not present".to_string()).into());
         };
 
         // let db = parts
@@ -161,7 +157,7 @@ where
 
         // check if token hasn't expired
         if token_expired(&db, &token) {
-            return Err(ErrorKind::AuthFailed("".to_string()).into());
+            return Err(ErrorKind::AuthFailed("token expired".to_string()).into());
         }
 
         let user_pointer = UserId { id: token.user_id };

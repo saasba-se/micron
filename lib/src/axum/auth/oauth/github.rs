@@ -9,7 +9,10 @@ use axum_extra::extract::PrivateCookieJar;
 use mime::Mime;
 use oauth2::{reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope};
 
-use crate::axum::{ConfigExt, DbExt};
+use crate::{
+    axum::{ConfigExt, DbExt},
+    oauth::Link,
+};
 use crate::{routes, Result};
 
 /// Initiates oauth2 randevous with github. Results in a redirect to provider
@@ -50,7 +53,17 @@ pub async fn callback(
 ) -> Result<(PrivateCookieJar, Redirect)> {
     if let Some(code) = query.code {
         if let Ok(user_info) = crate::oauth::github::get_user_info(code, &config, &db).await {
-            let cookie = crate::oauth::login_or_register(user_info, &db, &config).await?;
+            let (user_id, cookie) =
+                crate::oauth::login_or_register(user_info.clone(), &db, &config).await?;
+
+            // Link the account
+            let mut user = db.get::<crate::User>(user_id)?;
+            user.linked_accounts.push(Link::Github {
+                login: user_info.handle.unwrap(),
+            });
+            db.set(&user)?;
+
+            // Update cookies to actually log the user in
             let updated_cookies = cookies.add(cookie);
             return Ok((updated_cookies, Redirect::to("/")));
         } else {

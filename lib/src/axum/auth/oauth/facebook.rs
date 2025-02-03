@@ -49,7 +49,9 @@ pub async fn callback(
 ) -> Result<(PrivateCookieJar, Redirect)> {
     if let Some(code) = query.code {
         if let Ok(user_info) = crate::oauth::facebook::get_user_info(code, &config, &db).await {
-            if let Ok(cookie) = crate::oauth::login_or_register(user_info, &db, &config).await {
+            if let Ok((user_id, cookie)) =
+                crate::oauth::login_or_register(user_info, &db, &config).await
+            {
                 let updated_cookies = cookies.add(cookie);
                 return Ok((updated_cookies, Redirect::to("/")));
             } else {

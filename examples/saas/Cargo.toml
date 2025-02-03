@@ -1,10 +1,10 @@
 [package]
-name = "saasbase-demo"
+name = "saas-example"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-saasbase = { path = "../lib" }
+micron = { path = "../../lib" }
 
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.7", features = ["macros"] }

@@ -299,12 +299,11 @@ impl IntoResponse for Error {
             ErrorKind::Forbidden => StatusCode::FORBIDDEN.into_response(),
             ErrorKind::AuthFailed { .. } => {
                 tracing::debug!("{}", self.to_string());
-                let msg = if cfg!(debug_assertions) {
-                    self.kind.to_string()
+                if cfg!(debug_assertions) {
+                    (StatusCode::FORBIDDEN, Html(self.to_string())).into_response()
                 } else {
-                    "Auth failed".to_string()
-                };
-                (StatusCode::FORBIDDEN, Html(msg)).into_response()
+                    Redirect::to("/login").into_response()
+                }
             }
             ErrorKind::InvalidCredentials => {
                 tracing::debug!("{}", self.to_string());

@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{arg, Arg, ArgAction, ArgMatches};
 use tokio_util::sync::CancellationToken;
 
-use saasbase::{
+use micron::{
     auth::{hash_password, validate_password},
     Database, User,
 };
@@ -104,7 +104,7 @@ pub async fn run(sub_matches: &ArgMatches, remote: bool, cancel: CancellationTok
                 password_hash: Some(hash_password(&passwd)?),
                 name: name.unwrap_or("".to_string()),
                 handle: handle.unwrap_or("".to_string()),
-                plan: saasbase::user::Plan::free(),
+                plan: micron::user::Plan::free(),
                 ..Default::default()
             };
             if remote {

@@ -12,7 +12,7 @@ mod util;
 use std::time::Duration;
 
 use clap::{Arg, ArgMatches, Command};
-use saasbase::{config, Config};
+use micron::{config, Config};
 use tokio_util::sync::CancellationToken;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 pub fn cmd(config: &Config) -> Command {
-    Command::new("saasbase")
+    Command::new("micron")
         .subcommand_required(true)
         .arg_required_else_help(true)
         // .args_conflicts_with_subcommands(true)
@@ -67,8 +67,8 @@ pub fn cmd(config: &Config) -> Command {
         .version(VERSION)
         .author(AUTHORS)
         .about(
-            "Build saas fast. Repeat.\n\
-            Learn more at https://saasba.se",
+            "Build web apps fast. Repeat.\n\
+            Learn more at https://saasba.se/micron",
         )
         .subcommand(user::cmd())
         .subcommand(mail::cmd(config))

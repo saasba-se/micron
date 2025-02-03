@@ -1,16 +1,16 @@
 [package]
-name = "saasbase-cli"
+name = "micron-cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["Adam Wierchoła <adam@wierchola.com>"]
-default-run = "saasbase"
+default-run = "micron"
 
 [[bin]]
-name = "saasbase"
+name = "micron"
 path = "src/main.rs"
 
 [dependencies]
-saasbase = { path = "../lib" }
+micron = { path = "../lib" }
 
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"]}
 tokio-util = "0.7.11"

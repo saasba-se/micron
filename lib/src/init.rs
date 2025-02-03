@@ -23,6 +23,13 @@ pub fn initialize(config: &Config, db: &Database) -> Result<()> {
             db.set(&image)?;
             user.avatar = image.id;
         }
+        if db
+            .get_collection::<crate::User>()?
+            .iter()
+            .any(|u| u.email == user.email)
+        {
+            continue;
+        }
         db.set(&user)?;
     }
     Ok(())

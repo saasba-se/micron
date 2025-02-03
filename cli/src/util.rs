@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 /// Stores provided token in the target location where it can be read.
 pub async fn store_token(token: &String) -> Result<()> {
-    let dirs = match directories::ProjectDirs::from("", "", "saasbase") {
+    let dirs = match directories::ProjectDirs::from("", "", "micron") {
         Some(dirs) => dirs,
         None => return Err(Error::msg("couldn't access default directory on system")),
     };
@@ -24,7 +24,7 @@ pub async fn store_token(token: &String) -> Result<()> {
 }
 
 pub async fn retrieve_token() -> Result<Uuid> {
-    let dirs = match directories::ProjectDirs::from("", "", "saasbase") {
+    let dirs = match directories::ProjectDirs::from("", "", "micron") {
         Some(dirs) => dirs,
         None => return Err(Error::msg("couldn't access default directory on system")),
     };

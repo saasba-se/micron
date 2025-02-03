@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 use clap::{Arg, ArgMatches, Command};
 use tokio_util::sync::CancellationToken;
 
-use saasbase::api::{self, AuthDuration, AuthResponse, AuthScope};
+use micron::api::{self, AuthDuration, AuthResponse, AuthScope};
 
 use crate::util::store_token;
 

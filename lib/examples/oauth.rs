@@ -14,7 +14,7 @@ use axum::{
     routing::get,
 };
 
-use saasbase::{config, Config};
+use micron::{config, Config};
 
 #[tokio::main]
 async fn main() {
@@ -37,16 +37,16 @@ async fn main() {
     };
 
     // main application router
-    let mut router = saasbase::axum::Router::new().route("/", get(home));
+    let mut router = micron::axum::Router::new().route("/", get(home));
 
-    // attach saasbase routes
-    router = saasbase::axum::router(router, &config);
+    // attach micron routes
+    router = micron::axum::router(router, &config);
 
     // start the application
-    saasbase::axum::start(router, config).await.expect("failed")
+    micron::axum::start(router, config).await.expect("failed")
 }
 
-async fn home(user: Option<saasbase::axum::extract::User>) -> Response {
+async fn home(user: Option<micron::axum::extract::User>) -> Response {
     if let Some(user) = user {
         Html(format!(
             "welcome {}! | credits: {} | <a href=\"/logout\">log out</a>",

@@ -46,7 +46,7 @@ pub async fn subscribe(
         crate::email::mailing_confirmation(subscriber.address, subscriber.id.to_string(), &config)?;
     }
 
-    Ok(())
+    Ok("Sent!")
 }
 
 /// Verifies the provided key, which is also the subscriber id.
@@ -63,8 +63,10 @@ pub async fn confirm(
     // set the subscriber as confirmed
     subscriber.confirmed = true;
 
+    db.set(&subscriber)?;
+
     // TODO: show notification to user that verification was successful
-    Ok(Redirect::to("/"))
+    Ok(Redirect::to("/?msg=2"))
 }
 
 pub async fn unsubscribe(
@@ -83,5 +85,5 @@ pub async fn unsubscribe(
         db.remove(&sub)?;
     }
 
-    Ok(())
+    Ok("Success!")
 }

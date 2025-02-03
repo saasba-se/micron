@@ -17,20 +17,20 @@ use axum::{
     Extension,
 };
 
-use partial::Head;
-use saasbase::{
+use micron::{
     axum::{askama::HtmlTemplate, ConfigExt, Router},
     config, Config,
 };
+use partial::Head;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config = config::load()?;
 
     let router = Router::new().route("/", get(home));
-    let router = saasbase::router(router, &config);
+    let router = micron::router(router, &config);
 
-    saasbase::axum::start(router, config).await?;
+    micron::axum::start(router, config).await?;
 
     Ok(())
 }
@@ -39,15 +39,12 @@ async fn main() -> anyhow::Result<()> {
 #[template(path = "pages/home.html")]
 pub struct Home {
     head: partial::Head,
-    config: saasbase::Config,
+    config: micron::Config,
 
-    pub user: Option<saasbase::User>,
+    pub user: Option<micron::User>,
 }
 
-async fn home(
-    user: Option<saasbase::axum::extract::User>,
-    Extension(config): ConfigExt,
-) -> Response {
+async fn home(user: Option<micron::axum::extract::User>, Extension(config): ConfigExt) -> Response {
     HtmlTemplate(Home {
         head: Head {
             title: match &user {

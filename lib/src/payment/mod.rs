@@ -21,17 +21,16 @@ pub type PaymentId = uuid::Uuid;
 ///
 /// # Stripe payments
 ///
-///
-/// `saasbase` payments are currently inextricably linked to stripe payments
+/// `micron` payments are currently inextricably linked to stripe payments
 /// processor.
 ///
-/// Each initiated payment is translated to a stripe checkout session.
+/// Each initiated payment is translated to a stripe checkout session. In the
+/// background every possibly-paying user is also "mirrored" with the stripe
+/// system as a *customer*.
 ///
 /// Each payment can be translated to a stripe checkout session. Stripe's
 /// checkout sessions also contain lots of information not directly related to
 /// the payment itself; that's where we plug in payment-related order.
-///
-///
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Payment {

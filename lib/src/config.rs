@@ -4,10 +4,10 @@ use serde::de::DeserializeOwned;
 
 use crate::{user::Plan, Result};
 
-pub static CONFIG_FILE: &'static str = "saasbase.toml";
+pub static CONFIG_FILE: &'static str = "micron.toml";
 
 /// Application configuration. Defines all the aspects of the application
-/// that are to be handled on the `saasbase` level.
+/// that are to be handled on the `micron` level.
 ///
 /// # Sensible defaults
 ///

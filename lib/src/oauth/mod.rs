@@ -15,9 +15,21 @@ use oauth2::url::Url;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
 use crate::auth::login::log_in_user_id;
-use crate::Database;
 use crate::{config, User};
 use crate::{Config, ErrorKind, Result};
+use crate::{Database, UserId};
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Link {
+    /// Github account is identified via the login string
+    // TODO: perhaps identify via a login and email pair instead
+    Github {
+        login: String,
+    },
+    Google,
+    Discord,
+    Facebook,
+}
 
 pub fn client(
     config: &config::OauthEntry,
@@ -42,11 +54,11 @@ pub fn client(
 /// integrated into our model.
 #[derive(Clone, Default)]
 pub struct UserInfo {
-    email: String,
-    full_name: Option<String>,
-    handle: Option<String>,
-    location: Option<String>,
-    avatar_url: Option<String>,
+    pub email: String,
+    pub full_name: Option<String>,
+    pub handle: Option<String>,
+    pub location: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 /// Determines how to proceed after successful oauth procedure.
@@ -54,13 +66,15 @@ pub async fn login_or_register<'c>(
     user_info: UserInfo,
     db: &Database,
     config: &Config,
-) -> Result<Cookie<'c>> {
+) -> Result<(UserId, Cookie<'c>)> {
     let mut matched_user = None;
 
     // determine if it's a new user logging in, or if we've already seen them
     for user in db.get_collection::<User>()? {
         if user.email == user_info.email {
             // found user with matching email
+            // TODO: if the found user has a confirmed email and/or has set
+            // a password, perform an additional check
             matched_user = Some(user);
             break;
         }
@@ -74,7 +88,7 @@ pub async fn login_or_register<'c>(
             let user = new_user_from_oauth(&db, user_info).await?;
             db.set(&user)?;
 
-            return log_in_user_id(&user.id, db);
+            return Ok((user.id, log_in_user_id(&user.id, db)?));
         } else {
             // user is confirmed the owner of the email, it must be the
             // same person, log in as the existing user
@@ -84,7 +98,7 @@ pub async fn login_or_register<'c>(
 
             // let the user in
             println!("logging as the existing user: {:?}", user.id);
-            return log_in_user_id(&user.id, db);
+            return Ok((user.id, log_in_user_id(&user.id, db)?));
         }
     } else {
         // user email doesn't appear in the db, treat this login as a new user
@@ -100,7 +114,7 @@ pub async fn login_or_register<'c>(
 
         let user = new_user_from_oauth(&db, user_info).await?;
         db.set(&user)?;
-        return log_in_user_id(&user.id, db);
+        return Ok((user.id, log_in_user_id(&user.id, db)?));
     }
 }
 

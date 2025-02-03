@@ -21,7 +21,7 @@
 use include_dir::{include_dir, Dir};
 use tower_serve_static::ServeDir;
 
-use saasbase::Config;
+use micron::Config;
 
 // embed files from `examples/assets` directory into the binary
 static ASSETS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/examples/assets");
@@ -33,11 +33,11 @@ async fn main() {
     config.assets.serve = false;
 
     // main application router
-    let mut router = saasbase::axum::Router::new().nest_service("/assets", ServeDir::new(&ASSETS));
+    let mut router = micron::axum::Router::new().nest_service("/assets", ServeDir::new(&ASSETS));
 
-    // attach saasbase routes
-    router = saasbase::axum::router(router, &config);
+    // attach micron routes
+    router = micron::axum::router(router, &config);
 
     // start the application
-    saasbase::axum::start(router, config).await.expect("failed")
+    micron::axum::start(router, config).await.expect("failed")
 }

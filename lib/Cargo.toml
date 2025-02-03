@@ -1,26 +1,16 @@
 [package]
-name = "saasbase"
+name = "micron"
 version = "0.1.0"
 edition = "2021"
-description = "Build saas fast. Repeat."
+description = "Build web apps fast. Repeat."
 license = "MIT"
-repository = "https://github.com/adamsky/saasbase"
-
+repository = "https://github.com/saasba-se/micron"
 
 [features]
-default = ["axum", "askama", "sled"]
-
+default = ["axum", "askama", "sled", "stripe"]
 axum = ["dep:axum", "axum-extra"]
-# actix = ["actix-web"]
-
-# oauth = ["oauth2"]
-
-sqlite = ["tokio-rusqlite", "rusqlite"]
-# sled = ["sled"]
-# fjall = ["fjall"]
-# redb = ["redb"]
-
 stripe = ["async-stripe"]
+sqlite = ["tokio-rusqlite", "rusqlite"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -88,6 +78,5 @@ lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
 [dev-dependencies]
 anyhow = "1.0.82"
 askama = "0.12.1"
-
 tower-serve-static = { git = "https://github.com/jannik4/tower-serve-static", version = "0.1.1" }
 include_dir = "0.7.0"

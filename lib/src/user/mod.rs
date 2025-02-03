@@ -1,5 +1,6 @@
 pub mod subscription;
 
+use fnv::FnvHashSet;
 pub use subscription::Plan;
 
 use std::fmt::{Display, Formatter};
@@ -22,6 +23,7 @@ use crate::db::{decode, encode, Collectable, Database, Identifiable};
 use crate::error::{Error, ErrorKind, Result};
 use crate::i18n::Language;
 use crate::image::{Image, ImageId};
+use crate::oauth;
 use crate::order::Order;
 
 pub type UserId = Uuid;
@@ -63,6 +65,12 @@ pub struct User {
     pub email: String,
     pub email_confirmed: bool,
 
+    /// List of linked accounts from third-party services.
+    ///
+    /// When user links one or more accounts we increase confidence that the
+    /// account is not fake.
+    pub linked_accounts: Vec<oauth::Link>,
+
     /// Users authenticating with oauth won't have a password set,
     /// unless they choose to set it later, hence the option type.
     pub password_hash: Option<String>,
@@ -92,6 +100,8 @@ impl Default for User {
 
             email: "foo@bar.com".to_string(),
             email_confirmed: false,
+
+            linked_accounts: Vec::new(),
 
             password_hash: None,
 
@@ -254,12 +264,12 @@ pub struct UserNotifications {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UserSettings {
-    /// Prefer dark theme when visiting dash
+    /// Prefer dark theme
     pub dark_mode: bool,
 
     /// Turn notifications on and off
     // TODO more granular control
-    pub dash_notifications: bool,
+    pub notifications: bool,
 
     /// Turn email notifications on and off
     // TODO more granular control
@@ -282,7 +292,7 @@ impl Default for UserSettings {
     fn default() -> Self {
         Self {
             dark_mode: false,
-            dash_notifications: false,
+            notifications: false,
             email_notifications: false,
             language: Language::English,
             api_credits: false,
@@ -302,18 +312,13 @@ pub struct UserActivity {
     pub message: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, strum::Display)]
+#[strum(serialize_all = "lowercase")]
 pub enum UserActivityCategory {
     #[default]
     Payment,
-}
-
-impl Display for UserActivityCategory {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Payment => write!(f, "payment"),
-        }
-    }
+    LoginSuccessful,
+    LoginUnsuccesful,
 }
 
 #[derive(

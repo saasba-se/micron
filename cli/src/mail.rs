@@ -8,8 +8,9 @@ use clap::{
 };
 use tokio_util::sync::CancellationToken;
 
-use saasbase::{
+use micron::{
     auth::{hash_password, validate_password},
+    email::list::Subscriber,
     Config, Database, User,
 };
 use uuid::Uuid;
@@ -44,14 +45,12 @@ pub fn cmd(config: &Config) -> clap::Command {
         .subcommand(
             clap::Command::new("list")
                 .subcommand_required(false)
-                .arg_required_else_help(true)
                 .about("Manage mailing lists")
                 .arg(
-                    Arg::new("get")
-                        .long("get")
-                        .help("Get list")
-                        .num_args(0..=1)
-                        .default_missing_value("all"),
+                    Arg::new("name")
+                        .help("Select list by name")
+                        .required(false)
+                        .num_args(0..=1),
                 )
                 .arg(
                     Arg::new("email")
@@ -75,19 +74,30 @@ pub async fn run(
     config: &Config,
     cancel: CancellationToken,
 ) -> Result<()> {
+    let db = Database::new()?;
+
     match matches.subcommand() {
         Some(("list", m)) => {
-            match m.get_one::<String>("get") {
-                Some(s) => {
-                    print!("Found mailing lists:");
-                    for list in &config.mailing.lists {
-                        print!("{list}, ");
+            match m.get_one::<String>("name") {
+                Some(name) => {
+                    let mut subs = db.get_collection::<Subscriber>()?;
+                    subs.retain(|s| s.lists.contains(name));
+                    println!("Mailing list `{}` subscribers: {:?}", name, subs);
+                }
+
+                None => {
+                    // `mail list` gets a list of mailing lists
+
+                    print!("Found mailing lists: ");
+                    for (n, list) in config.mailing.lists.iter().enumerate() {
+                        print!("{list}");
+                        if n < config.mailing.lists.len() - 1 {
+                            print!(", ");
+                        }
                     }
                     print!("\n");
                 }
-                _ => unimplemented!(),
             }
-            if m.contains_id("get") {}
         }
         _ => unimplemented!(),
     }
