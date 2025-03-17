@@ -2,8 +2,13 @@
 pub mod stripe;
 
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
-use crate::{order::OrderId, Result, UserId};
+use crate::{
+    db::{Collectable, Identifiable},
+    order::OrderId,
+    Result, UserId,
+};
 
 pub type PaymentId = uuid::Uuid;
 
@@ -31,27 +36,42 @@ pub type PaymentId = uuid::Uuid;
 /// Each payment can be translated to a stripe checkout session. Stripe's
 /// checkout sessions also contain lots of information not directly related to
 /// the payment itself; that's where we plug in payment-related order.
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Payment {
     pub id: PaymentId,
+    pub order: OrderId,
 
     pub status: Status,
 
-    pub order: OrderId,
-    pub user: UserId,
-
-    pub stripe_session_id: String,
+    #[cfg(feature = "stripe")]
+    pub stripe_session_id: Option<String>,
 }
 
-impl Payment {
-    pub fn new() -> Result<Self> {
-        // Self {}
-        todo!()
+impl Collectable for Payment {
+    fn get_collection_name() -> &'static str {
+        "payments"
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+impl Identifiable for Payment {
+    fn get_id(&self) -> uuid::Uuid {
+        self.id
+    }
+}
+
+impl Payment {
+    pub fn new(order: Uuid) -> Result<Self> {
+        Ok(Self {
+            id: Uuid::new_v4(),
+            order,
+            status: Status::Pending,
+            #[cfg(feature = "stripe")]
+            stripe_session_id: None,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub enum Status {
     /// Waiting for payment
     Pending,

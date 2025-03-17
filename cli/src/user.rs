@@ -6,6 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 use micron::{
     auth::{hash_password, validate_password},
+    db::Collectable,
     Database, User,
 };
 use uuid::Uuid;
@@ -45,7 +46,6 @@ pub fn cmd() -> clap::Command {
         .subcommand(
             clap::Command::new("get")
                 .subcommand_required(false)
-                .arg_required_else_help(true)
                 .about("Gets user matching provided information")
                 .arg(
                     Arg::new("email")
@@ -77,6 +77,24 @@ pub fn cmd() -> clap::Command {
                 // .arg(arg!(--first_name [first_name] "User first name"))
                 // .arg(arg!(--last_name [last_name] "User last name"))
                 .arg(Arg::new("passwd_hash").long("passwd").short('p')),
+        )
+        .subcommand(
+            clap::Command::new("rm")
+                .about("Removes selected user(s)")
+                // find user based on uuid
+                .arg(
+                    Arg::new("email")
+                        .short('e')
+                        .long("email")
+                        .help("User email"),
+                )
+                .arg(Arg::new("handle").long("handle").help("User handle"))
+                .arg(
+                    Arg::new("all")
+                        .long("all")
+                        .num_args(0)
+                        .help("Flag to select all users"),
+                ),
         )
 }
 
@@ -140,7 +158,7 @@ pub async fn run(sub_matches: &ArgMatches, remote: bool, cancel: CancellationTok
 
             // println!("{:?}", user_query);
 
-            let mut found_users = None;
+            let mut found_users: Option<Vec<User>> = None;
 
             if remote {
                 // perform remote get
@@ -151,7 +169,7 @@ pub async fn run(sub_matches: &ArgMatches, remote: bool, cancel: CancellationTok
             } else if let Some(db) = db {
                 // perform local get
                 for user in db.get_collection::<User>()? {
-                    let mut user_ok = false;
+                    let mut user_ok = true;
                     if let Some(email) = &email {
                         user_ok = &user.email == email;
                     }
@@ -162,8 +180,11 @@ pub async fn run(sub_matches: &ArgMatches, remote: bool, cancel: CancellationTok
                         }
                     }
                     if user_ok {
-                        found_users = Some(vec![user]);
-                        break;
+                        if let Some(ref mut found_users) = found_users {
+                            found_users.push(user);
+                        } else {
+                            found_users = Some(vec![user])
+                        }
                     }
                 }
             }
@@ -216,6 +237,62 @@ pub async fn run(sub_matches: &ArgMatches, remote: bool, cancel: CancellationTok
             println!("Changed user");
         }
         ("rm", sub_matches) => {
+            let email = sub_matches.get_one::<String>("email").cloned();
+            let handle = sub_matches.get_one::<String>("handle").cloned();
+            let all = sub_matches.get_one::<bool>("all").cloned();
+
+            if remote {
+                // let resp = remote_cmd(Command::AddUser(user.clone()))?;
+                // if let Response::Error(e) = resp {
+                //     return Err(Error::Other(format!("failed adding user (remote): {}", e)));
+                // }
+            } else if let Some(db) = db {
+                // remove all users
+                if let Some(true) = all {
+                    db.clear_at(User::get_collection_name())?;
+                    cancel.cancel();
+                    return Ok(());
+                }
+
+                let users = db.get_collection::<User>()?;
+
+                let user = if let Some(email) = email {
+                    let users = users
+                        .into_iter()
+                        .filter(|u| u.email == email)
+                        .collect::<Vec<_>>();
+                    if users.len() > 1 {
+                        return Err(anyhow::Error::msg("multiple users with that email exist"));
+                    } else if users.len() == 1 {
+                        db.remove(users.first().unwrap())?;
+                    } else {
+                        return Err(anyhow::Error::msg("no users with that email exist"));
+                    }
+                } else {
+                    if let Some(handle) = handle {
+                        let users = users
+                            .into_iter()
+                            .filter(|u| u.handle == handle)
+                            .collect::<Vec<_>>();
+                        if users.len() > 1 {
+                            return Err(anyhow::Error::msg(
+                                "multiple users with that handle exist",
+                            ));
+                        } else if users.len() == 1 {
+                            db.remove(users.first().unwrap())?;
+                        } else {
+                            return Err(anyhow::Error::msg("no users with that handle exist"));
+                        }
+                    } else {
+                        return Err(anyhow::Error::msg(
+                            "provide either email or handle to select user to remove",
+                        ));
+                    }
+                };
+            } else {
+                panic!("no access to application data")
+            }
+
             println!("Removed user");
         }
         ("mod", sub_matches) => {

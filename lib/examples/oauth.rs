@@ -28,6 +28,7 @@ async fn main() {
         oauth: config::Oauth {
             enabled: true,
             github: config::OauthEntry {
+                enabled: true,
                 client_id: "c31f7946cd7ccf47d3d2".to_string(),
                 client_secret: "8a1b86e774f42222d26ed1c08e970f3dad58c167".to_string(),
             },

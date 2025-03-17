@@ -1,8 +1,10 @@
 #![allow(warnings)]
 
+mod export;
 mod init;
 mod login;
 mod mail;
+mod migrate;
 mod new;
 mod status;
 mod user;
@@ -40,6 +42,8 @@ async fn main() -> anyhow::Result<()> {
         Some(("user", m)) => user::run(m, false, cancel.clone()).await?,
         Some(("mail", m)) => mail::run(m, false, &config, cancel.clone()).await?,
         Some(("login", m)) => login::run(m, cancel.clone()).await?,
+        Some(("export", m)) => export::run(m, cancel.clone()).await?,
+        Some(("migrate", m)) => migrate::run(m, cancel.clone()).await?,
         _ => unimplemented!(),
     }
 
@@ -72,7 +76,9 @@ pub fn cmd(config: &Config) -> Command {
         )
         .subcommand(user::cmd())
         .subcommand(mail::cmd(config))
+        .subcommand(export::cmd())
         .subcommand(login::cmd())
+        .subcommand(migrate::cmd())
         // .subcommand(ctl::user::cmd())
         .arg(Arg::new("config").value_name("PATH"))
         .arg(

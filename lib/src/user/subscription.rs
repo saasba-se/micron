@@ -6,6 +6,7 @@ use rust_decimal::Decimal;
 #[serde(default)]
 pub struct Plan {
     pub name: String,
+    /// Price is always defined per one month
     pub price: Decimal,
     pub perks: Vec<String>,
 }

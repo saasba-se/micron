@@ -3,10 +3,7 @@ use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 
-use axum::body::HttpBody;
-use axum::http::Uri;
-use axum::response::{Html, IntoResponse, Redirect, Response};
-use axum::Json;
+use http::header::SET_COOKIE;
 use http::status::StatusCode;
 use serde_json::json;
 use url::Url;
@@ -67,7 +64,7 @@ impl Display for Error {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ErrorKind {
-    #[error("unexpected error")]
+    #[error("io error: {0}")]
     StdIoError(#[from] std::io::Error),
 
     #[error("unexpected error")]
@@ -151,6 +148,8 @@ pub enum ErrorKind {
     BincodeError(#[from] bincode::Error),
     #[error("json decode error: {0}")]
     JsonError(#[from] serde_json::Error),
+    #[error("yaml decode error: {0}")]
+    YamlError(#[from] serde_yaml::Error),
     #[error("toml decode error: {0}")]
     TomlError(#[from] toml::de::Error),
     #[error("pot decode error: {0}")]
@@ -168,6 +167,13 @@ pub enum ErrorKind {
     UserNotFound(String),
     #[error("user does not have a password set")]
     UserDoesNotHavePassword,
+
+    #[error("post not found: {0}")]
+    PostNotFound(String),
+
+    #[cfg(feature = "stripe")]
+    #[error("stripe error: {0}")]
+    StripeError(#[from] stripe::StripeError),
 
     #[error("infallible?")]
     Infallible(#[from] Infallible),
@@ -223,6 +229,12 @@ impl From<serde_json::Error> for Error {
     }
 }
 
+impl From<serde_yaml::Error> for Error {
+    fn from(e: serde_yaml::Error) -> Self {
+        Self::new(ErrorKind::YamlError(e))
+    }
+}
+
 impl From<toml::de::Error> for Error {
     fn from(e: toml::de::Error) -> Self {
         Self::new(ErrorKind::TomlError(e))
@@ -271,6 +283,13 @@ impl From<std::io::Error> for Error {
     }
 }
 
+#[cfg(feature = "stripe")]
+impl From<stripe::StripeError> for Error {
+    fn from(e: stripe::StripeError) -> Self {
+        Self::new(ErrorKind::StripeError(e))
+    }
+}
+
 impl From<Infallible> for Error {
     fn from(e: Infallible) -> Self {
         Self::new(ErrorKind::Infallible(e))
@@ -283,6 +302,11 @@ impl From<ErrorKind> for Error {
     }
 }
 
+use axum::body::HttpBody;
+use axum::http::Uri;
+use axum::response::{AppendHeaders, Html, IntoResponse, Redirect, Response};
+use axum::Json;
+
 /// Implements conversion into html response for all possible error variants.
 ///
 /// # Error message stripping in production
@@ -293,6 +317,7 @@ impl From<ErrorKind> for Error {
 /// Backtrace and additional context information (e.g. user information) are
 /// never part of the response and always only available through the
 /// application logs.
+// TODO: move to the axum module
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match &self.kind {
@@ -331,8 +356,15 @@ impl IntoResponse for Error {
 
             ErrorKind::FailedGettingTokenCookie(target_url) => {
                 tracing::debug!("{}", self.to_string());
-                // save redirection target to a cookie
-                Redirect::to(&format!("{}?redir={}", "/login", target_url.to_string()))
+                // Save redirection target to a cookie so that we can perform
+                // the final redirection after successful login
+                (
+                    AppendHeaders([(
+                        SET_COOKIE,
+                        format!("next={};SameSite=Lax;Secure;Path=/", target_url.to_string()),
+                    )]),
+                    Redirect::to("/login"),
+                )
                     .into_response()
             }
             ErrorKind::RegistrationClosed(e) => {

@@ -36,7 +36,7 @@ pub struct CreditsHistory {
 pub fn calculate_history(user_id: UserId, db: &Database) -> Result<CreditsHistory> {
     let mut user = db.get::<User>(user_id)?;
     let mut orders = db.get_collection::<Order>()?;
-    orders.retain(|p| p.user_id == user_id);
+    orders.retain(|p| p.user == user_id);
 
     let history = user.credits.calculate_history(orders);
 

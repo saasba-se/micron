@@ -65,11 +65,11 @@ pub struct User {
     pub email: String,
     pub email_confirmed: bool,
 
-    /// List of linked accounts from third-party services.
+    /// Linked accounts from third-party services.
     ///
     /// When user links one or more accounts we increase confidence that the
     /// account is not fake.
-    pub linked_accounts: Vec<oauth::Link>,
+    pub linked_accounts: oauth::Links,
 
     /// Users authenticating with oauth won't have a password set,
     /// unless they choose to set it later, hence the option type.
@@ -84,7 +84,9 @@ pub struct User {
     pub settings: UserSettings,
 
     pub completion: usize,
-    // pub stripe_customer_id: String,
+
+    #[cfg(feature = "stripe")]
+    pub stripe_customer_id: Option<String>,
 }
 
 impl Default for User {
@@ -101,7 +103,7 @@ impl Default for User {
             email: "foo@bar.com".to_string(),
             email_confirmed: false,
 
-            linked_accounts: Vec::new(),
+            linked_accounts: oauth::Links::default(),
 
             password_hash: None,
 
@@ -125,13 +127,16 @@ impl Default for User {
             activities: Default::default(),
 
             completion: 0,
+
+            #[cfg(feature = "stripe")]
+            stripe_customer_id: None,
         }
     }
 }
 
 impl Collectable for User {
     fn get_collection_name() -> &'static str {
-        "user"
+        "users"
     }
 }
 

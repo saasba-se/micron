@@ -66,18 +66,8 @@ pub async fn login(
             ));
         }
 
-        let redir = if let Some(redir) = cookies.get("redir") {
-            redir.value().to_string()
-        } else {
-            "/".to_string()
-        };
-
         cookies = cookies.add(crate::auth::login::log_in_user_id(&user.id, &db)?);
-        cookies = cookies.remove(Cookie::named("redir"));
 
-        Ok((
-            cookies,
-            AppendHeaders([("HX-Redirect", &redir)]).into_response(),
-        ))
+        Ok((cookies, Redirect::to("/redir").into_response()))
     }
 }

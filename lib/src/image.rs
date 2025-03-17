@@ -24,7 +24,7 @@ impl Image {
 
 impl Collectable for Image {
     fn get_collection_name() -> &'static str {
-        "image"
+        "images"
     }
 }
 

@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod comment;
 pub mod extract;
 pub mod image;
 pub mod mailing;
@@ -6,6 +7,8 @@ pub mod user;
 
 #[cfg(feature = "askama")]
 pub mod askama;
+#[cfg(feature = "stripe")]
+pub mod stripe;
 
 pub use extract::user::User;
 
@@ -21,17 +24,45 @@ pub type Router = axum::Router<cookie::Key>;
 pub type ConfigExt<C = Config> = Extension<Arc<C>>;
 pub type DbExt = Extension<Arc<Database>>;
 
+#[cfg(feature = "stripe")]
+pub type StripeExt = Extension<Arc<::stripe::Client>>;
+
 /// Registers micron routes on the provided router.
 ///
 /// Meant to be used if there is a need to register custom middleware that will
 /// run on micron routes.
-pub fn router(router: Router, config: &Config) -> Router {
-    // TODO: merge routers based on whether they are enabled in config
-    router
-        .merge(user::router())
-        .merge(mailing::router())
-        .merge(auth::router(&config))
-        .merge(image::router())
+///
+/// # Configurable routes
+///
+/// It's possible to customize the routes registered with this function through
+/// relevant config declarations. This is helpful in cases where we want to
+/// still register the same route with the same micron handler but also add
+/// a middleware layer on top of that route.
+// TODO: allow more granular control over registered routes; pass config down
+// to the individual module router generators; differentiate `module` vs
+// `/route` identifiers
+// TODO: could perhaps make this nicer by introducing a newtype for the router
+// and implementing custom `route` and `merge`
+pub fn router(mut router: Router, config: &Config) -> Router {
+    #[cfg(feature = "stripe")]
+    {
+        router = conditional_merge("stripe", router, stripe::router(), config);
+    }
+    router = conditional_merge("user", router, user::router(), config);
+    router = conditional_merge("comment", router, comment::router(), config);
+    router = conditional_merge("mailing", router, mailing::router(), config);
+    router = conditional_merge("auth", router, auth::router(config), config);
+    conditional_merge("image", router, image::router(), config)
+}
+
+fn conditional_merge(route: &str, routera: Router, routerb: Router, config: &Config) -> Router {
+    if config.routes.enable.contains(&route.to_string())
+        || !config.routes.disable.contains(&route.to_string())
+    {
+        routera.merge(routerb)
+    } else {
+        routera
+    }
 }
 
 /// Registers micron routes on the provided router, initializes application
@@ -46,7 +77,9 @@ pub async fn start_with(db: Database, mut router: Router, config: Config) -> Res
     });
 
     // Provide initial state as defined in config
-    crate::init::initialize(&config, &db);
+    if config.init.enabled {
+        crate::init::initialize(&config, &db)?;
+    }
 
     // Generate mock data. Basically we want to be able to create a full
     // "synthetic" state consisting of all the different data items.
@@ -84,6 +117,16 @@ pub async fn start_with(db: Database, mut router: Router, config: Config) -> Res
 
     // Encapsulate application state
     let addr = config.address;
+
+    #[cfg(feature = "stripe")]
+    let mut router = {
+        let secret = if cfg!(debug_assertions) {
+            &config.payments.stripe.test_secret
+        } else {
+            &config.payments.stripe.secret
+        };
+        router.layer(Extension(Arc::new(::stripe::Client::new(secret))))
+    };
 
     let mut router = router
         // Register common state extension for all routes

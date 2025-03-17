@@ -10,8 +10,10 @@ use yansi::Paint;
 use crate::error::{ErrorKind, Result};
 use crate::Config;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, strum::EnumString)]
+#[serde(rename_all = "lowercase")]
 pub enum Mode {
+    #[strum(serialize = "prod")]
     Production,
     #[default]
     Formatted,
@@ -30,30 +32,23 @@ impl From<String> for Mode {
 }
 
 #[derive(PartialEq, Eq, Default, Debug, Clone, Copy, Deserialize, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum Level {
-    /// Only shows errors and warnings
-    Critical,
-    /// Shows errors, warnings, and some informational messages that are likely
-    /// to be relevant when troubleshooting such as configuration
-    Support,
-    /// Shows everything except debug and trace information
+    Error,
+    Warn,
     #[default]
-    Normal,
-    /// Shows debug information
+    Info,
     Debug,
-    /// Shows everything
     Trace,
-    /// Shows nothing
     Off,
 }
 
 impl From<&str> for Level {
     fn from(s: &str) -> Self {
         return match &*s.to_ascii_lowercase() {
-            "critical" => Level::Critical,
-            "support" | "warn" => Level::Support,
-            "normal" => Level::Normal,
+            "critical" => Level::Error,
+            "support" | "warn" => Level::Warn,
+            "normal" => Level::Info,
             "debug" | "dbg" => Level::Debug,
             "trace" => Level::Trace,
             "off" | "none" => Level::Off,
@@ -64,9 +59,9 @@ impl From<&str> for Level {
 
 pub fn filter_layer(level: Level) -> EnvFilter {
     let filter_str = match level {
-        Level::Critical => "warn,rustls=off,tungstenite=off",
-        Level::Support => "warn,rustls=off,tungstenite=off",
-        Level::Normal => "info,rustls=off,tungstenite=off",
+        Level::Error => "warn,rustls=off,tungstenite=off",
+        Level::Warn => "warn,rustls=off,tungstenite=off",
+        Level::Info => "info,rustls=off,tungstenite=off",
         Level::Debug => "debug,sled=info,tungstenite=info",
         Level::Trace => "trace,sled=info,tungstenite=info,message_io=debug,mio=debug,want=off",
         Level::Off => "off",
@@ -128,17 +123,22 @@ pub fn init(config: &Config) -> Result<()> {
         Mode::Production => {
             // loki layer
             use tracing_loki::url::Url;
-            let (loki_layer, task) = tracing_loki::layer(
-                Url::parse(&config.tracing.loki_address).unwrap(),
-                vec![
-                    ("host".into(), config.address.to_string()),
-                    ("app".into(), config.name.clone()),
-                ]
-                .into_iter()
-                .collect(),
-                vec![].into_iter().collect(),
-            )
-            .expect("tracing_loki failed making new layer");
+
+            let (loki_layer, task) = tracing_loki::builder()
+                .http_header("token", &config.tracing.loki_token)
+                .unwrap()
+                .label("host", config.address.to_string())
+                .unwrap()
+                .label("app", config.name.to_string())
+                .unwrap()
+                .build_url(
+                    Url::parse(&config.tracing.loki_address)
+                        .unwrap()
+                        .join("/")
+                        .unwrap(),
+                )
+                .expect("tracing_loki failed making new layer");
+
             // The background task needs to be spawned so the logs actually get
             // delivered to loki.
             tokio::spawn(task);

@@ -15,17 +15,27 @@ use oauth2::url::Url;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
 use crate::auth::login::log_in_user_id;
-use crate::{config, User};
+use crate::{config, user, User};
 use crate::{Config, ErrorKind, Result};
 use crate::{Database, UserId};
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Links {
+    pub github: Option<Link>,
+    pub google: Option<Link>,
+    pub discord: Option<Link>,
+    pub facebook: Option<Link>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub enum Link {
-    /// Github account is identified via the login string
-    // TODO: perhaps identify via a login and email pair instead
-    Github {
-        login: String,
-    },
+pub struct Link {
+    pub email: String,
+    pub handle: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum Provider {
+    Github,
     Google,
     Discord,
     Facebook,
@@ -81,7 +91,7 @@ pub async fn login_or_register<'c>(
     }
 
     // user appears in the db (matching email)
-    if let Some(user) = matched_user {
+    if let Some(mut user) = matched_user {
         // user email was not confirmed, we will overwrite that user
         // with a new one based on the oauth provider info
         if !user.email_confirmed {
@@ -95,9 +105,13 @@ pub async fn login_or_register<'c>(
 
             // TODO: add any additional information provided by oauth provider
             // to the user account
+            if let Some(url) = user_info.avatar_url {
+                user.set_avatar_from_url(db, &url).await?;
+                db.set(&user)?;
+            }
 
             // let the user in
-            println!("logging as the existing user: {:?}", user.id);
+            println!("logging in as the existing user: {:?}", user.id);
             return Ok((user.id, log_in_user_id(&user.id, db)?));
         }
     } else {
@@ -128,6 +142,8 @@ pub async fn new_user_from_oauth(db: &Database, user_info: UserInfo) -> Result<U
     user.handle = user_info.handle.unwrap_or(user_info.email);
     if let Some(avatar_url) = user_info.avatar_url {
         user.set_avatar_from_url(db, &avatar_url).await?;
+    } else {
+        user.avatar = user::new_avatar_image(db)?;
     }
     Ok(user)
 }

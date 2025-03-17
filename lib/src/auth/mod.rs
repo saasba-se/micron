@@ -52,7 +52,7 @@ pub struct TokenMeta {
 
 impl Collectable for TokenMeta {
     fn get_collection_name() -> &'static str {
-        "access_token"
+        "access_tokens"
     }
 }
 

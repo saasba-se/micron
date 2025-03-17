@@ -19,7 +19,7 @@ use crate::auth::{self, TokenMeta};
 use crate::credits::{Credits, CreditsHistory};
 use crate::db::{decode, encode, Database};
 use crate::error::{ErrorKind, Result};
-use crate::order::{Order, OrderItem, OrderMode};
+use crate::order::{Order, OrderMode, OrderStatus};
 use crate::payment::{Payment, Status};
 use crate::user::{self, User, UserId};
 use crate::Config;
@@ -131,30 +131,28 @@ pub fn create_test_user(db: &Database) -> Result<Uuid> {
     // insert some orders assigned to the user
     let order1 = Order {
         id: Uuid::new_v4(),
-        user_id,
+        user: user_id,
         time: Utc::now()
             .checked_sub_signed(chrono::Duration::hours(5))
             .unwrap(),
+        status: OrderStatus::Completed {
+            time: Utc::now()
+                .checked_sub_signed(chrono::Duration::hours(4))
+                .unwrap(),
+        },
         mode: OrderMode::Manual,
         items: vec![],
-        payment: Payment {
-            id: todo!(),
-            status: Status::Pending,
-            order: todo!(),
-            user: todo!(),
-            stripe_session_id: todo!(),
-        },
     };
     db.set(&order1)?;
     let order2 = Order {
         id: Uuid::new_v4(),
-        user_id,
+        user: user_id,
         time: Utc::now()
             .checked_sub_signed(chrono::Duration::hours(15))
             .unwrap(),
+        status: OrderStatus::Failed,
         mode: OrderMode::Manual,
         items: vec![],
-        payment: Payment::new()?,
     };
     db.set(&order2)?;
 

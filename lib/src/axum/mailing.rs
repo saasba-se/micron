@@ -17,7 +17,8 @@ use super::{ConfigExt, DbExt};
 pub fn router() -> Router {
     Router::new()
         .route("/mailing/subscribe", post(subscribe))
-        .route("/mailing/unsubscribe", get(unsubscribe))
+        .route("/mailing/unsubscribe/:subscriber", get(unsubscribe))
+        .route("/mailing/confirm/:key", get(confirm))
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -69,14 +70,20 @@ pub async fn confirm(
     Ok(Redirect::to("/?msg=2"))
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct UnsubscribeQuery {
+    pub lists: Option<HashSet<String>>,
+}
+
 pub async fn unsubscribe(
     Extension(db): DbExt,
-    Path((subscriber, lists)): Path<(Uuid, Option<HashSet<String>>)>,
+    Path(subscriber): Path<Uuid>,
+    Query(query): Query<UnsubscribeQuery>,
 ) -> Result<impl IntoResponse> {
     let mut sub: Subscriber = db.get(subscriber)?;
 
     // Remove subscriber from selected lists
-    if let Some(lists) = lists {
+    if let Some(lists) = query.lists {
         sub.lists.retain(|list| !lists.contains(list));
         db.set(&sub)?;
     }

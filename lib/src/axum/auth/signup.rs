@@ -1,4 +1,4 @@
-use axum::response::{AppendHeaders, Html, IntoResponse};
+use axum::response::{AppendHeaders, Html, IntoResponse, Redirect};
 use axum::{Extension, Form};
 use axum_extra::extract::PrivateCookieJar;
 use cookie::Cookie;
@@ -54,10 +54,10 @@ pub async fn signup(
     // depending on configuration let the user in or require verification
     if config.auth.require_confirmed_email {
         // redirect to the page instructing user to click the link from email
-        Ok((cookies, AppendHeaders([("HX-Redirect", "/verify")])))
+        Ok((cookies, Redirect::to("/verify")))
     } else {
         // login the user in
         cookies = cookies.add(crate::auth::login::log_in_user_id(&user.id, &db)?);
-        Ok((cookies, AppendHeaders([("HX-Redirect", "/")])))
+        Ok((cookies, Redirect::to("/")))
     }
 }

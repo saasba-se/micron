@@ -147,6 +147,7 @@ pub mod oauth;
 pub mod order;
 pub mod payment;
 pub mod post;
+pub mod product;
 pub mod user;
 
 #[cfg(feature = "axum")]
@@ -160,4 +161,5 @@ pub use db::Database;
 pub use error::{Error, ErrorKind, Result};
 pub use image::{Image, ImageId};
 pub use post::Post;
+pub use product::Product;
 pub use user::{User, UserId};

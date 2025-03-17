@@ -47,6 +47,7 @@ pub struct Config {
     pub oauth: Oauth,
 
     pub registration: Registration,
+    pub comments: Comments,
 
     pub email: Email,
     pub mailing: Mailing,
@@ -67,6 +68,10 @@ pub struct Config {
 
     /// Development mode configuration.
     pub dev: DevMode,
+
+    pub init: Init,
+    /// Selectively enable/disable pre-made routes
+    pub routes: Routes,
 }
 
 impl Default for Config {
@@ -83,13 +88,16 @@ impl Default for Config {
             plans: vec![],
             auth: Auth::default(),
             oauth: Oauth::default(),
-            registration: Default::default(),
+            registration: Registration::default(),
             users: vec![],
             phrases: vec![],
-            payments: Default::default(),
-            company: Default::default(),
-            email: Default::default(),
-            mailing: Default::default(),
+            payments: Payments::default(),
+            company: Company::default(),
+            email: Email::default(),
+            mailing: Mailing::default(),
+            routes: Routes::default(),
+            comments: Comments::default(),
+            init: Init::default(),
         }
     }
 }
@@ -100,17 +108,39 @@ pub fn load<T: DeserializeOwned>() -> Result<T> {
     load_from(CONFIG_FILE)
 }
 
-/// Loads application config from toml file at the given path.
-pub fn load_from<T: DeserializeOwned>(path: impl AsRef<str>) -> Result<T> {
+/// Loads application config from toml file at standard path using provided=
+/// name.
+///
+/// For example for `name` == `micron.toml` we will load both `micron.toml`
+/// and `secret.micron.toml` from the main project directory.
+pub fn load_from<T: DeserializeOwned>(name: impl AsRef<str>) -> Result<T> {
     let config = config::Config::builder()
-        .add_source(config::File::with_name(path.as_ref()))
-        .add_source(config::File::with_name(&format!("secret.{}", path.as_ref())).required(false))
+        .add_source(config::File::with_name(name.as_ref()))
+        .add_source(config::File::with_name(&format!("secret.{}", name.as_ref())).required(false))
         .add_source(
             config::Environment::default()
                 .separator("__")
                 .prefix_separator("__"),
         )
         .build()?;
+
+    let config: T = config.try_deserialize()?;
+
+    Ok(config)
+}
+
+/// Loads application config from multiple toml files at given paths.
+pub fn load_from_many<T: DeserializeOwned>(paths: &[impl AsRef<str>]) -> Result<T> {
+    let mut builder = config::Config::builder().add_source(
+        config::Environment::default()
+            .separator("__")
+            .prefix_separator("__"),
+    );
+
+    for path in paths {
+        builder = builder.add_source(config::File::with_name(path.as_ref()));
+    }
+    let config = builder.build()?;
 
     let config: T = config.try_deserialize()?;
 
@@ -162,6 +192,7 @@ pub struct Tracing {
     pub level: crate::tracing::Level,
 
     pub loki_address: String,
+    pub loki_token: String,
 }
 
 impl Default for Tracing {
@@ -171,6 +202,7 @@ impl Default for Tracing {
             mode: crate::tracing::Mode::default(),
             level: crate::tracing::Level::default(),
             loki_address: "".to_string(),
+            loki_token: "".to_string(),
         }
     }
 }
@@ -198,6 +230,26 @@ pub struct DevMode {
     // mock_filter: Vec<String>,
 }
 
+// TODO: allow more granular control.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Init {
+    pub enabled: bool,
+}
+
+impl Default for Init {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Routes {
+    pub enable: Vec<String>,
+    pub disable: Vec<String>,
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Payments {
     pub stripe: Stripe,
@@ -205,7 +257,15 @@ pub struct Payments {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Stripe {
+    /// Production secret, used with release builds
     pub secret: String,
+    /// Test secret, used with debug builds
+    pub test_secret: String,
+
+    /// Production signing secret for verifing incoming webhook events
+    pub signing_secret: String,
+    /// Test signing secret for verifing incoming webhook events
+    pub test_signing_secret: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -239,6 +299,7 @@ pub struct Oauth {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct OauthEntry {
+    pub enabled: bool,
     pub client_id: String,
     pub client_secret: String,
 }
@@ -255,6 +316,22 @@ pub struct Registration {
 
     /// Oauth2 registration switch, further configured through `config::oauth`.
     pub oauth: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Comments {
+    /// Global rate limit per user. Expressed as a number of seconds between
+    /// individual comments.
+    pub rate_limit: Option<usize>,
+}
+
+impl Default for Comments {
+    fn default() -> Self {
+        Self {
+            rate_limit: Some(30),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

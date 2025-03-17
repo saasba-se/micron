@@ -71,7 +71,7 @@ pub async fn get_user_info<'c>(
     // Fetch user data
     let client = reqwest::Client::new();
     let user_info: FacebookUserInfo = client
-        .get("https://graph.facebook.com/me?fields=id,name,email,picture")
+        .get("https://graph.facebook.com/me?fields=id,name,email,picture.type(large)")
         .bearer_auth(token.access_token().secret())
         .send()
         .await

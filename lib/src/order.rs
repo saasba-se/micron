@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::db::Collectable;
-use crate::payment::Payment;
+use crate::payment::{self, Payment};
+use crate::product::Product;
+use crate::Database;
+use crate::Result;
 use crate::{db::Identifiable, user, user::UserId};
 
 pub type OrderCost = Decimal;
@@ -20,21 +23,20 @@ pub struct Order {
     /// Unique identifier for the order
     pub id: OrderId,
     /// Id of the user connected to the order
-    pub user_id: UserId,
-    /// Time at which the order took place
+    pub user: UserId,
+    /// Time at which the order was initiated
     pub time: DateTime<Utc>,
+    /// Current status of the order
+    pub status: OrderStatus,
     /// Description of how the order was initiated
     pub mode: OrderMode,
-    /// List of items included in the order
-    pub items: Vec<OrderItem>,
-
-    /// Payment attached to the order, tracking payment details.
-    pub payment: Payment,
+    /// List of product items included in the order
+    pub items: Vec<Product>,
 }
 
 impl Collectable for Order {
     fn get_collection_name() -> &'static str {
-        "order"
+        "orders"
     }
 }
 
@@ -54,23 +56,31 @@ impl Order {
         delta
     }
 
-    /// Returns status of the order based on payment status.
-    // TODO: take into account the item delivery status.
-    pub fn status(&self) -> OrderStatus {
-        match self.payment.status {
-            crate::payment::Status::Pending => OrderStatus::Processing,
-            crate::payment::Status::Canceled => OrderStatus::Failed,
-            crate::payment::Status::Successful { time } => OrderStatus::Completed { time },
-            crate::payment::Status::Error(_) => todo!(),
+    /// Start fulfilling the order.
+    pub async fn fulfill(mut self, db: &Database) -> Result<()> {
+        self.status = OrderStatus::Processing;
+        db.set(&self)?;
+
+        for item in &self.items {
+            item.realize_for(self.user, db).await?;
         }
+
+        self.status = OrderStatus::Completed { time: Utc::now() };
+        db.set(&self)?;
+
+        Ok(())
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum OrderStatus {
+    /// The order was initiated, waiting on payment
     Initiated,
+    /// Payment was successful, waiting on fulfillment
     Processing,
+    /// Failed and couldn't recover (e.g. re-init payment)
     Failed,
+    /// Completed the order successfully
     Completed { time: DateTime<Utc> },
 }
 
@@ -83,44 +93,4 @@ pub enum OrderMode {
     /// Order was was initiated automatically based on a user-defined
     /// plan
     Auto,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum OrderItem {
-    Credits(u32),
-    // CloudNodeHours(CloudNodeHours),
-    // SharedNodeMonths(u32),
-    SubscriptionPlanMonths(user::Plan, u32),
-}
-
-impl OrderItem {
-    pub fn amount(&self) -> u32 {
-        match self {
-            Self::Credits(amount) => *amount,
-            Self::SubscriptionPlanMonths(plan, amount) => *amount,
-        }
-    }
-
-    pub fn cost(&self) -> OrderCost {
-        match self {
-            Self::Credits(amount) => Decimal::new(*amount as i64, 1),
-            // Self::SharedNodeMonths(item) => item.into(),
-            Self::SubscriptionPlanMonths(plan, months) => {
-                plan.price * Decimal::from_f32_retain(*months as f32).unwrap()
-            }
-            _ => unimplemented!(),
-        }
-    }
-}
-
-impl std::fmt::Display for OrderItem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OrderItem::Credits(amount) => write!(f, "Credits ({amount})"),
-            OrderItem::SubscriptionPlanMonths(plan, months) => {
-                write!(f, "{} subscription plan ({} months)", plan.name, months)
-            }
-            _ => unimplemented!(),
-        }
-    }
 }

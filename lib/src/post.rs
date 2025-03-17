@@ -60,7 +60,7 @@ impl Default for Post {
 
 impl Collectable for Post {
     fn get_collection_name() -> &'static str {
-        "post"
+        "posts"
     }
 }
 
