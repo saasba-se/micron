@@ -290,7 +290,7 @@ pub struct Auth {
 #[serde(default)]
 pub struct Oauth {
     pub enabled: bool,
-    pub discord: bool,
+    pub discord: OauthEntry,
     pub facebook: OauthEntry,
     pub github: OauthEntry,
     pub google: OauthEntry,

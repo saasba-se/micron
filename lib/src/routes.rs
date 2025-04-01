@@ -1,3 +1,5 @@
+//! Pre-defined routes definitions.
+
 pub const HOME: &str = "/";
 
 pub const LOGIN: &str = "/login";

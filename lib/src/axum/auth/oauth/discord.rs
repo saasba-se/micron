@@ -10,27 +10,23 @@ use oauth2::{reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope};
 use crate::axum::{ConfigExt, DbExt};
 use crate::Result;
 
-/// Initiates oauth2 randevous with google. Results in a redirect to provider
+/// Initiates oauth2 randevous with discord. Results in a redirect to provider
 /// service.
 pub async fn initiate(Extension(config): ConfigExt) -> Result<impl IntoResponse> {
     let config = &config;
 
     let client = crate::oauth::client(
-        &config.oauth.google,
+        &config.oauth.discord,
         config.domain.clone(),
-        "google".to_string(),
-        crate::oauth::google::AUTH_URL.to_string(),
-        crate::oauth::google::TOKEN_URL.to_string(),
+        "discord".to_string(),
+        crate::oauth::discord::AUTH_URL.to_string(),
+        crate::oauth::discord::TOKEN_URL.to_string(),
     )?;
 
     let (auth_url, _csrf_token) = client
         .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/userinfo.email".to_string(),
-        ))
-        .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/userinfo.profile".to_string(),
-        ))
+        .add_scope(Scope::new("identify".to_string()))
+        .add_scope(Scope::new("email".to_string()))
         .url();
 
     // Redirect to oauth service
@@ -51,9 +47,8 @@ pub async fn callback(
     Extension(config): ConfigExt,
     Extension(db): DbExt,
 ) -> Result<(PrivateCookieJar, Redirect)> {
-    println!("query: {query:?}");
     if let Some(code) = query.code {
-        if let Ok(user_info) = crate::oauth::google::get_user_info(code, &config, &db).await {
+        if let Ok(user_info) = crate::oauth::discord::get_user_info(code, &config, &db).await {
             if let Ok((user_id, cookie)) =
                 crate::oauth::login_or_register(user_info, &db, &config).await
             {
@@ -67,7 +62,7 @@ pub async fn callback(
         }
     } else {
         if let Some(e) = query.error {
-            log::warn!("unsuccessful google oauth2: {}", e);
+            log::warn!("unsuccessful discord oauth2: {}", e);
         }
         Ok((cookies, Redirect::to("/")))
     }

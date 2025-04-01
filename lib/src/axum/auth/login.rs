@@ -68,6 +68,9 @@ pub async fn login(
 
         cookies = cookies.add(crate::auth::login::log_in_user_id(&user.id, &db)?);
 
-        Ok((cookies, Redirect::to("/redir").into_response()))
+        Ok((
+            cookies,
+            AppendHeaders([("HX-Redirect", "/redir")]).into_response(),
+        ))
     }
 }

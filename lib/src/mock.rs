@@ -4,7 +4,9 @@ use chrono::Utc;
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use crate::{auth, credits::Credits, user, Config, Database, ErrorKind, Result, User};
+use crate::{
+    auth, credits::Credits, order::Order, user, Config, Database, ErrorKind, Result, User, UserId,
+};
 
 /// Generates and saves various mocking data in the database.
 pub fn generate(config: &Config, db: &Database) -> Result<()> {
@@ -16,7 +18,7 @@ pub fn generate(config: &Config, db: &Database) -> Result<()> {
 pub fn user(config: &Config, db: &Database) -> Result<User> {
     let email = "test@mail.com".to_string();
 
-    // does the test user already exist
+    // If the test user already exists, return immediately
     if db
         .get_collection::<User>()?
         .iter()
@@ -65,41 +67,31 @@ pub fn user(config: &Config, db: &Database) -> Result<User> {
 
     db.set(&user)?;
 
-    // // insert some orders assigned to the user
-    // let order1 = Order {
-    //     id: Uuid::new_v4(),
-    //     user_id,
-    //     time: Utc::now()
-    //         .checked_sub_signed(chrono::Duration::hours(5))
-    //         .unwrap(),
-    //     mode: OrderMode::Manual,
-    //     items: vec![OrderItem::CloudNodeHours(CloudNodeHours {
-    //         count: 16,
-    //         rate: dec!(0.130),
-    //     })],
-    //     payment: Payment {
-    //         status: PaymentStatus::Pending,
-    //     },
-    // };
-    // db.set("orders", &order1)?;
-    // let order2 = Order {
-    //     id: Uuid::new_v4(),
-    //     user_id,
-    //     time: Utc::now()
-    //         .checked_sub_signed(chrono::Duration::hours(15))
-    //         .unwrap(),
-    //     mode: OrderMode::Manual,
-    //     items: vec![OrderItem::CloudNodeHours(CloudNodeHours {
-    //         count: 32,
-    //         rate: dec!(0.0823),
-    //     })],
-    //     payment: Payment {
-    //         status: PaymentStatus::Pending,
-    //     },
-    // };
-    // db.set("orders", &order2)?;
-
-    // TODO: add some other data owned by the user
+    orders(user.id, &db);
+    // TODO: add more
 
     Ok(user)
+}
+
+fn orders(user: UserId, db: &Database) -> Result<()> {
+    use crate::order::{OrderMode, OrderStatus};
+
+    let order1 = Order {
+        id: Uuid::new_v4(),
+        user,
+        time: Utc::now()
+            .checked_sub_signed(chrono::Duration::hours(5))
+            .unwrap(),
+        status: OrderStatus::Completed {
+            time: Utc::now()
+                .checked_sub_signed(chrono::Duration::hours(4))
+                .unwrap(),
+        },
+        mode: OrderMode::Manual,
+        items: vec![],
+    };
+
+    db.set(&order1)?;
+
+    Ok(())
 }

@@ -5,7 +5,7 @@
 //!
 //! # Rebuilding on assets change
 //!
-//! Note that, as this is just an example which doesn't come with a build
+//! Note that, as this is just an example that doesn't come with a build
 //! script, you will be required to forcibly clean the artifact and rebuild
 //! after you introduce changes to `examples/assets`.
 //!

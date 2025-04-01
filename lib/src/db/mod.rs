@@ -16,8 +16,6 @@ use crate::{error::ErrorKind, Result};
 pub use redb::ReDb as Database;
 #[cfg(feature = "sled")]
 pub use sled::SledDb as Database;
-#[cfg(feature = "sqlite")]
-pub use sqlite::SqliteDb as Database;
 
 pub trait Identifiable {
     fn get_id(&self) -> Uuid;

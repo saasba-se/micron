@@ -1,0 +1,19 @@
+address = "127.0.0.1:8000"
+
+[dev]
+enabled = true
+mock = true
+mock_regen = true
+# autologin = "test@mail.com"
+
+[oauth.github]
+enabled = true
+
+[mfa] 
+enabled = false
+
+[registration]
+enabled = true
+email = true
+oauth = false
+

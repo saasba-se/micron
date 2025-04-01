@@ -10,10 +10,9 @@ repository = "https://github.com/saasba-se/micron"
 default = ["axum", "askama", "sled", "stripe"]
 axum = ["dep:axum", "axum-extra"]
 stripe = ["async-stripe"]
-sqlite = ["tokio-rusqlite", "rusqlite"]
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio = "1"
 futures = "0.3.30"
 axum = { version = "0.7", features = ["macros"], optional = true }
 axum-extra = { version = "0.9.2", features = ["cookie-private"], optional = true }
@@ -29,10 +28,6 @@ url = "2"
 
 sled = { version = "0.34.7", optional = true }
 redb = { version = "2.0.0", optional = true }
-tokio-rusqlite = { version = "0.5.1", optional = true }
-rusqlite = { version = "0.31.0", features = ["bundled"], optional = true }
-redis = { version = "0.25.3", optional = true }
-tikv-client = { version = "0.3", optional = true }
 
 serde = "1"
 serde_derive = "1"

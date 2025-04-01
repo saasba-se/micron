@@ -95,8 +95,9 @@ where
         } else {
             // otherwise try accessing cookie jar and extracting the token cookie
             let jar: PrivateCookieJar<CookieKey> =
-                PrivateCookieJar::from_request_parts(&mut parts, state).await?;
-            // let jar = PrivateCookieJar::from_headers(&parts.headers, app.cookie_key.clone());
+                PrivateCookieJar::from_request_parts(&mut parts, state)
+                    .await
+                    .unwrap();
 
             let cookie = jar
                 .get("token")

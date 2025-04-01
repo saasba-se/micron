@@ -95,9 +95,9 @@ impl SledDb {
 
     /// Convenience function providing initializing a default if the target
     /// collection element is not found in the db.
-    /// TODO: currently this doesn't set the id of the new item to the id
-    /// provided to the function. It could be done by expanding the
-    /// Identifiable trait to include ability to also set the id.
+    // TODO: currently this doesn't set the id of the new item to the id
+    // provided to the function. It could be done by expanding the
+    // Identifiable trait to include ability to also set the id.
     pub fn get_or_create<T: Serialize + DeserializeOwned + Identifiable + Collectable + Default>(
         &self,
         id: Uuid,

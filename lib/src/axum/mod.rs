@@ -10,6 +10,8 @@ pub mod askama;
 #[cfg(feature = "stripe")]
 pub mod stripe;
 
+mod error;
+
 pub use extract::user::User;
 
 use std::{net::ToSocketAddrs, sync::Arc};

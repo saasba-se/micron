@@ -97,7 +97,7 @@
 //! to make use of them as needed.
 //!
 //! ```toml
-//! micron = { version = "0.1.0", default-features = false, features = ["axum", "fjall"] }
+//! micron = { version = "0.1.0", default-features = false, features = ["axum", "redb"] }
 //! ```
 //!
 //!
@@ -132,6 +132,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod init;
+pub mod mock;
 pub mod routes;
 pub mod tracing;
 pub mod util;
@@ -142,7 +143,6 @@ pub mod credits;
 pub mod email;
 pub mod i18n;
 pub mod image;
-pub mod mock;
 pub mod oauth;
 pub mod order;
 pub mod payment;

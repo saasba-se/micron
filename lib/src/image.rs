@@ -1,5 +1,5 @@
-//! Module handling dynamic images stored in the database, as opposed to static
-//! images served from `assets`.
+//! Module handling *dynamic* images stored in the database, as opposed to
+//! *static* image assets.
 
 use serde::{Deserialize, Serialize};
 

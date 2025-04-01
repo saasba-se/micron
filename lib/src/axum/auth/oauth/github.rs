@@ -10,12 +10,12 @@ use http::{header::SET_COOKIE, HeaderMap};
 use mime::Mime;
 use oauth2::{reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope};
 
+use crate::Result;
 use crate::{
     axum::{ConfigExt, DbExt},
     oauth::{self, Link},
     ErrorKind,
 };
-use crate::{routes, Result};
 
 /// Initiates oauth2 randevous with github. Results in a redirect to provider
 /// service.

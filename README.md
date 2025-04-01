@@ -73,7 +73,7 @@ The chosen example should now be accessible at `localhost:8000`. If that
 port is unavailable on your machine simply modify the `address` field of
 the `./examples/{example}/micron.toml` file.
 
-For a more involved application using `micron` see the
+For an example of a more involved application using `micron` see the
 [`ruda` project](https://github.com/adamsky/ruda).
 
 Examples showing off particular aspects of the library are also provided
@@ -103,7 +103,7 @@ solutions in some cases (for example different storage engines). Feel free
 to make use of them as needed.
 
 ```toml
-micron = { version = "0.1.0", default-features = false, features = ["axum", "fjall"] }
+micron = { version = "0.1.0", default-features = false, features = ["axum", "redb"] }
 ```
 
 

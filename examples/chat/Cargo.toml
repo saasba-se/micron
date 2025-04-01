@@ -1,0 +1,20 @@
+[package]
+name = "chat-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+micron = { path = "../../lib" }
+
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["macros"] }
+axum-extra = { version = "0.9.2", features = ["cookie-private"] }
+askama = { version = "0.12.1" }
+
+serde = "1"
+serde_derive = "1"
+
+anyhow = "1.0.82"
+
+chrono = { version = "0.4", features = ["serde"] }
+

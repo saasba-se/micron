@@ -1,4 +1,4 @@
-// pub mod discord;
+pub mod discord;
 pub mod facebook;
 pub mod github;
 pub mod google;
@@ -148,9 +148,5 @@ pub async fn new_user_from_oauth(db: &Database, user_info: UserInfo) -> Result<U
     Ok(user)
 }
 
-// Discord: "https://discordapp.com/api/oauth2/authorize", "https://discordapp.com/api/oauth2/token",
-// Google: "https://accounts.google.com/o/oauth2/v2/auth", "https://www.googleapis.com/oauth2/v4/token",
 // Microsoft: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize", "https://login.microsoftonline.com/common/oauth2/v2.0/token",
 // Reddit: "https://www.reddit.com/api/v1/authorize", "https://www.reddit.com/api/v1/access_token",
-// Wikimedia: "https://meta.wikimedia.org/w/rest.php/oauth2/authorize", "https://meta.wikimedia.org/w/rest.php/oauth2/access_token",
-// Yahoo: "https://api.login.yahoo.com/oauth2/request_auth", "https://api.login.yahoo.com/oauth2/get_token",

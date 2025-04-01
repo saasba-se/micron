@@ -8,7 +8,7 @@ use mime::Mime;
 use oauth2::{reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope};
 
 use crate::axum::{ConfigExt, DbExt};
-use crate::{routes, Result};
+use crate::Result;
 
 /// Initiates oauth2 randevous with facebook. Results in a redirect to provider
 /// service.

@@ -22,7 +22,7 @@ use crate::config;
 use crate::db::{decode, encode, Database};
 use crate::error::Result;
 use crate::user::User;
-use crate::{routes, Config};
+use crate::Config;
 
 use super::UserInfo;
 
